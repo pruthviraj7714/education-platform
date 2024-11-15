@@ -2,8 +2,8 @@ import React, { useState } from "react";
 import { useLocation } from "react-router-dom";
 import chapter from "../../../assets/chapter.svg";
 import student from "../../../assets/student.svg";
-import { FaEdit, FaTrash } from "react-icons/fa";
-import { Modal, Form, Input, Tag, Switch } from "antd";
+import { FaTrash } from "react-icons/fa";
+import { Switch } from "antd";
 
 interface CourseCardProps {
   title: string;
@@ -32,18 +32,18 @@ const CourseCard: React.FC<CourseCardProps> = ({
   courseId,
   isPublished = false,
   onDelete,
-  onEdit,
+  // onEdit,
   onTogglePublishStatus,
   onClick,
 }) => {
   const location = useLocation();
   const isLearnerDashboard = location.pathname === "/learner/dashboard";
   const [isTruncated, setIsTruncated] = useState(true);
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [form] = Form.useForm();
-  const [existingTags, setExistingTags] = useState<string[]>(tags);
-  const [newTag, setNewTag] = useState("");
-  const [tagsToRemove, setTagsToRemove] = useState<string[]>([]);
+  // const [isModalVisible, setIsModalVisible] = useState(false);
+  // const [form] = Form.useForm();
+  // const [existingTags, setExistingTags] = useState<string[]>(tags);
+  // const [newTag, setNewTag] = useState("");
+  //const [tagsToRemove, setTagsToRemove] = useState<string[]>([]);
   const maxDescriptionLength = 40;
 
   const toggleDescription = () => {
@@ -55,55 +55,55 @@ const CourseCard: React.FC<CourseCardProps> = ({
       ? `${description.substring(0, maxDescriptionLength)}...`
       : description;
 
-  const handleEdit = () => {
-    form.setFieldsValue({
-      title,
-      description,
-      addTags: "",
-    });
-    setExistingTags(tags);
-    setTagsToRemove([]);
-    setNewTag("");
-    setIsModalVisible(true);
-  };
+  // const handleEdit = () => {
+  //   form.setFieldsValue({
+  //     title,
+  //     description,
+  //     addTags: "",
+  //   });
+  //   setExistingTags(tags);
+  //   setTagsToRemove([]);
+  //   setNewTag("");
+  //   setIsModalVisible(true);
+  // };
 
-  const handleTagRemove = (tag: string) => {
-    setTagsToRemove((prev) => [...prev, tag]);
-    setExistingTags(existingTags.filter((existingTag) => existingTag !== tag));
-  };
+  // const handleTagRemove = (tag: string) => {
+  //   setTagsToRemove((prev) => [...prev, tag]);
+  //   setExistingTags(existingTags.filter((existingTag) => existingTag !== tag));
+  // };
 
-  const handleTagInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && newTag.trim()) {
-      setExistingTags((prev) => [...prev, newTag.trim()]);
-      setNewTag("");
-      e.preventDefault();
-    }
-  };
+  // const handleTagInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  //   if (e.key === "Enter" && newTag.trim()) {
+  //     setExistingTags((prev) => [...prev, newTag.trim()]);
+  //     setNewTag("");
+  //     e.preventDefault();
+  //   }
+  // };
 
-  const handleOk = () => {
-    form
-      .validateFields()
-      .then((values) => {
-        const updatedCourseData = {
-          title: values.title,
-          description: values.description,
-          addTags: existingTags.filter((tag) => !tags.includes(tag)),
-          removeTags: tagsToRemove,
-        };
+  // const handleOk = () => {
+  //   form
+  //     .validateFields()
+  //     .then((values) => {
+  //       const updatedCourseData = {
+  //         title: values.title,
+  //         description: values.description,
+  //         addTags: existingTags.filter((tag) => !tags.includes(tag)),
+  //         removeTags: tagsToRemove,
+  //       };
 
-        if (onEdit) {
-          onEdit(courseId, updatedCourseData);
-        }
-        setIsModalVisible(false);
-      })
-      .catch((info) => {
-        console.log("Validate Failed:", info);
-      });
-  };
+  //       if (onEdit) {
+  //         onEdit(courseId, updatedCourseData);
+  //       }
+  //       setIsModalVisible(false);
+  //     })
+  //     .catch((info) => {
+  //       console.log("Validate Failed:", info);
+  //     });
+  // };
 
-  const handleCancel = () => {
-    setIsModalVisible(false);
-  };
+  // const handleCancel = () => {
+  //   setIsModalVisible(false);
+  // };
 
   return (
     <div className="max-w-sm bg-white border p-4 border-gray-200 rounded-lg shadow-lg">

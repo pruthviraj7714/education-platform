@@ -49,7 +49,7 @@ const CourseDetailsPage = () => {
   const { chapters: initialChapters, loading, error, courses } = useSelector(
     (state: RootState) => state.mentor
   );
-  const { loading: authLoading, user, success } = useSelector((state: RootState) => state.auth);
+  const { user } = useSelector((state: RootState) => state.auth);
 
 
   useEffect(() => {
@@ -61,6 +61,7 @@ const CourseDetailsPage = () => {
   useEffect(() => {
     console.log(courses);
     if (courses && courseId) {
+      //@ts-ignore
       const course = courses.find((c) => c._id === courseId);
       if (course) {
         setCurrentCourse(course);
@@ -107,12 +108,12 @@ const CourseDetailsPage = () => {
 
   const onSubmit = (data: CourseFormData) => {
     if (!courseId) return;
-
     const updatedData = { ...data, tags, _id: courseId };
     startTransition(() => {
       dispatch(
         updateCourse({
           courseId,
+          //@ts-ignore
           courseData: updatedData,
           headers: { Authorization: `Bearer ${authToken}` },
         })
