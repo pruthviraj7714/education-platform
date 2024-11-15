@@ -1,0 +1,35 @@
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+    font-family: 'Open Sans', sans-serif;
+}
+
+.ant-menu-item-selected {
+    background-color: #FF9500 !important;
+    color: white !important;
+}
+
+.ant-select-selector {
+    border-radius: 8px !important;
+    background: #fcfcfd !important;
+}
+
+.ant-btn-primary {
+    background-color: #FF9500 !important;
+}
+
+.ant-btn-primary:hover {
+    background-color: #e68a00 !important;
+}
+
+.ant-btn-primary:focus {
+    background-color: #e68a00 !important;
+}
+
+.custom-spinner .ant-spin-dot-item {
+    background-color: #ff9500 !important;
+}
