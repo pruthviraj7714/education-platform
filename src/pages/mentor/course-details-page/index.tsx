@@ -1,13 +1,13 @@
 import { startTransition, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { 
-  fetchCoursesByCreator, 
-  getCourseChapter, 
-  updateCourse 
+import {
+  fetchCoursesByCreator,
+  getCourseChapter,
+  updateCourse,
 } from "../../../redux/slices/mentorSlice";
 import { AppDispatch, RootState } from "../../../redux/store";
 import { useParams, useNavigate } from "react-router-dom";
-import { Tabs } from "antd";
+import { Select, Tabs } from "antd";
 import { FormProvider, useForm } from "react-hook-form";
 import { FaArrowLeft, FaEdit, FaSave } from "react-icons/fa";
 import ChapterList from "../../../components/molecule/chapter-list/ChapterList";
@@ -27,9 +27,17 @@ interface CourseFormData {
   description: string;
   shortBio: string;
   price: number;
+  category: string;
   image: FileList | null;
   tags: string[];
 }
+
+const categoryOptions = [
+  { value: "ELECTRICAL", label: "ELECTRICAL" },
+  { value: "ELECTRONICS", label: "ELECTRONICS" },
+  { value: "NETWORKING", label: "NETWORKING" },
+  { value: "MATERIALS_SCIENCE", label: "MATERIALS_SCIENCE" },
+];
 
 const { TabPane } = Tabs;
 
@@ -46,11 +54,13 @@ const CourseDetailsPage = () => {
   const [currentCourse, setCurrentCourse] = useState<any>(null);
   const [chapters, setChapters] = useState<Chapter[]>([]);
 
-  const { chapters: initialChapters, loading, error, courses } = useSelector(
-    (state: RootState) => state.mentor
-  );
+  const {
+    chapters: initialChapters,
+    loading,
+    error,
+    creatorCourses: courses,
+  } = useSelector((state: RootState) => state.mentor);
   const { user } = useSelector((state: RootState) => state.auth);
-
 
   useEffect(() => {
     if (user?.userId && authToken) {
@@ -59,7 +69,6 @@ const CourseDetailsPage = () => {
   }, [dispatch, authToken]);
 
   useEffect(() => {
-    console.log(courses);
     if (courses && courseId) {
       //@ts-ignore
       const course = courses.find((c) => c._id === courseId);
@@ -70,8 +79,9 @@ const CourseDetailsPage = () => {
           description: course.description,
           shortBio: course.shortBio,
           price: course.price,
-          image: null,
           tags: course.tags,
+          //@ts-ignore
+          category: course.category,
         });
         setTags(course.tags);
       }
@@ -87,7 +97,11 @@ const CourseDetailsPage = () => {
   useEffect(() => {
     if (Array.isArray(initialChapters)) {
       setChapters(
-        initialChapters.map(({ title, content, _id }) => ({ title, content, _id }))
+        initialChapters.map(({ title, content, _id }) => ({
+          title,
+          content,
+          _id,
+        }))
       );
     }
   }, [initialChapters]);
@@ -108,7 +122,13 @@ const CourseDetailsPage = () => {
 
   const onSubmit = (data: CourseFormData) => {
     if (!courseId) return;
-    const updatedData = { ...data, tags, _id: courseId };
+
+    const updatedData = {
+      ...data,
+      image: currentCourse.image,
+      tags,
+    };
+
     startTransition(() => {
       dispatch(
         updateCourse({
@@ -117,14 +137,7 @@ const CourseDetailsPage = () => {
           courseData: updatedData,
           headers: { Authorization: `Bearer ${authToken}` },
         })
-      ).then(() =>
-        dispatch(
-          fetchCoursesByCreator({
-            creatorId: currentCourse.creator,
-            authToken: authToken as string,
-          })
-        )
-      );
+      )
     });
     setIsEditMode(false);
   };
@@ -155,8 +168,13 @@ const CourseDetailsPage = () => {
 
       <div className="bg-white rounded-md w-full mb-[60px]">
         <div className="p-6 flex justify-between items-center">
-          <h2 className="text-[24px] font-semibold text-[#191919]">Course Details</h2>
-          <Button className="flex items-center gap-1.5" onClick={() => setIsEditMode(!isEditMode)}>
+          <h2 className="text-[24px] font-semibold text-[#191919]">
+            Course Details
+          </h2>
+          <Button
+            className="flex items-center gap-1.5"
+            onClick={() => setIsEditMode(!isEditMode)}
+          >
             {isEditMode ? <FaSave /> : <FaEdit />}
             {isEditMode ? "Save Mode" : "Edit"}
           </Button>
@@ -190,7 +208,9 @@ const CourseDetailsPage = () => {
                 disabled={!isEditMode}
               />
               <div className="mb-6">
-                <label className="block text-[16px] font-medium mb-2">Course Tags</label>
+                <label className="block text-[16px] font-medium mb-2">
+                  Course Tags
+                </label>
                 <input
                   type="text"
                   placeholder={isEditMode ? "Press Enter to add a tag" : ""}
@@ -216,6 +236,24 @@ const CourseDetailsPage = () => {
                   ))}
                 </div>
               </div>
+              {isEditMode ? (
+                <Select
+                  options={categoryOptions}
+                  placeholder="Select Category"
+                  value={methods.watch("category")}
+                  onChange={(value) =>
+                    methods.setValue("category", value.toString(), {
+                      shouldValidate: true,
+                    })
+                  }
+                  className="mb-6"
+                />
+              ) : (
+                <div className="flex flex-col">
+                  <span className="font-bold text-gray-500">Category:</span>
+                  <span className="ml-10 my-2">{currentCourse?.category}</span>
+                </div>
+              )}
 
               <Input
                 type="number"
@@ -228,7 +266,10 @@ const CourseDetailsPage = () => {
 
               {isEditMode && (
                 <div className="flex justify-between">
-                  <Button variant="outlined" onClick={() => navigate("/dashboard")}>
+                  <Button
+                    variant="outlined"
+                    onClick={() => navigate("/dashboard")}
+                  >
                     Cancel
                   </Button>
                   <Button type="submit">Save Changes</Button>

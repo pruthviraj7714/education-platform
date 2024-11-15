@@ -181,6 +181,7 @@ export const updateCourse = createAsyncThunk<
         { ...courseData, courseId },
         { headers }
       );
+      console.log(response);
       return response.data;
     } catch (error: any) {
       return rejectWithValue(
