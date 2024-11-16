@@ -220,9 +220,9 @@ const CourseDetailsPage = () => {
         {isCreator && (
           <div
             onClick={() => setShowDetails(!showDetails)}
-            className="mx-14 flex cursor-pointer max-w-7xl justify-between items-center border-b-2 border-black/55 my-4 "
+            className="mx-14 flex cursor-pointer max-w-7xl justify-between items-center my-4 "
           >
-            <div className="font-bold">Edit Course Details</div>
+            <div className="leading-[28px] font-semibold text-[#191919] text-xl">Course Details</div>
             <div>
               {showDetails ? (
                 <FaChevronUp size={30} />
@@ -238,12 +238,6 @@ const CourseDetailsPage = () => {
               showDetails ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"
             }`}
           >
-            <div className="p-6 flex justify-between items-center border-b border-gray-200">
-              <h2 className="text-2xl font-semibold text-gray-800">
-                Course Details
-              </h2>
-            </div>
-
             <div className="p-6">
               <FormProvider {...methods}>
                 <form
