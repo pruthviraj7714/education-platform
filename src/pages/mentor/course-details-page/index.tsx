@@ -3,8 +3,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { useParams, useNavigate } from "react-router-dom";
 import { FormProvider, useForm } from "react-hook-form";
 import { Select, Tabs, Tag } from "antd";
-import { FaArrowLeft, FaChevronCircleDown, FaChevronDown, FaChevronUp, FaEdit, FaSave } from "react-icons/fa";
-import { BiDownArrowCircle, BiLoader } from "react-icons/bi";
+import { FaArrowLeft, FaChevronDown, FaChevronUp, FaEdit, FaSave } from "react-icons/fa";
+import { BiLoader } from "react-icons/bi";
 import { toast } from "react-toastify";
 
 import {
