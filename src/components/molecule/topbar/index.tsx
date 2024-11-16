@@ -17,7 +17,7 @@ const TopBar: React.FC<TopBarProps> = () => {
   const [isCreator, setIsCreator] = useState<boolean | null>(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
-  const { loading, success, user } = useSelector(
+  const { loading, user } = useSelector(
     (state: any) => state.auth
   );
 
@@ -45,7 +45,7 @@ const TopBar: React.FC<TopBarProps> = () => {
       return;
     }
 
-    if (success && user) {
+    if (!loading && user) {
       if (!isCreator) {
         navigate("/learner/dashboard");
       } else {

@@ -3,12 +3,11 @@ import { useDispatch, useSelector } from "react-redux";
 import { useParams, useNavigate } from "react-router-dom";
 import { FormProvider, useForm } from "react-hook-form";
 import { Select, Tabs, Tag } from "antd";
-import { FaArrowLeft, FaEdit, FaSave } from "react-icons/fa";
-import { BiLoader } from "react-icons/bi";
+import { FaArrowLeft, FaChevronCircleDown, FaChevronDown, FaChevronUp, FaEdit, FaSave } from "react-icons/fa";
+import { BiDownArrowCircle, BiLoader } from "react-icons/bi";
 import { toast } from "react-toastify";
 
 import {
-  fetchCourses,
   fetchCoursesByCreator,
   getCourseChapter,
   updateCourse,
@@ -57,6 +56,7 @@ const CourseDetailsPage = () => {
   const [removeTags, setRemoveTags] = useState<string[]>([]);
   const [currentCourse, setCurrentCourse] = useState<any>(null);
   const [chapters, setChapters] = useState<Chapter[]>([]);
+  const [showDetails, setShowDetails] = useState(false);
 
   const {
     chapters: initialChapters,
@@ -70,12 +70,8 @@ const CourseDetailsPage = () => {
 
   useEffect(() => {
     if (user?.userId && authToken && user.roles.includes("creator")) {
-      dispatch(fetchCoursesByCreator({ creatorId: user.userId, authToken }));
-    } else {
-      dispatch(fetchCourses());
-    }
-    if (user?.roles.includes("creator")) {
       setIsCreator(true);
+      dispatch(fetchCoursesByCreator({ creatorId: user.userId, authToken }));
     }
   }, [dispatch, authToken, user?.userId]);
 
@@ -92,7 +88,7 @@ const CourseDetailsPage = () => {
           tags: course.tags || [],
           //@ts-ignore
           category: course.category,
-          image: null, // Reset to null for file input
+          image: null,
         });
         console.log(course.tags);
         setTags(course.tags);
@@ -102,19 +98,18 @@ const CourseDetailsPage = () => {
 
   useEffect(() => {
     if (authToken && courseId) {
-      dispatch(getCourseChapter({ courseId, authToken }));
+      dispatch(getCourseChapter({ courseId, authToken }) as any);
     }
   }, [dispatch, courseId, authToken]);
 
   useEffect(() => {
     if (Array.isArray(initialChapters)) {
-      setChapters(
-        initialChapters.map(({ title, content, _id }) => ({
-          title,
-          content,
-          _id,
-        }))
-      );
+      const formattedChapters: Chapter[] = initialChapters.map((chapter) => ({
+        title: chapter?.title,
+        content: chapter?.content,
+        _id: chapter?._id,
+      }));
+      setChapters(formattedChapters);
     }
   }, [initialChapters]);
 
@@ -169,7 +164,7 @@ const CourseDetailsPage = () => {
 
     const updatedData = {
       ...data,
-      addTags:tags,
+      addTags: tags,
       ...(removeTags.length > 0 && { removeTags }),
       imageUrl: newImage,
       image: newImage,
@@ -205,15 +200,34 @@ const CourseDetailsPage = () => {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <button
-          onClick={() => navigate("/dashboard")}
+          onClick={() => {
+            if (!isCreator) {
+              navigate("/learner/dashboard");
+              return;
+            } else {
+              navigate("/dashboard");
+              return;
+            }
+          }}
           className="flex items-center gap-2 text-primary hover:text-primary/80 mb-6 transition-all"
         >
           <FaArrowLeft className="text-lg" />
           <span>Go Back</span>
         </button>
 
-        {isCreator && (
-          <div className="bg-white rounded-lg shadow-sm mb-8">
+          {isCreator && (
+            <div className="flex justify-between items-center my-4">
+              <div className="font-bold">
+                Show/Edit Course Details
+              </div>
+              <div className="cursor-pointer" onClick={() => setShowDetails(!showDetails)}>
+                {showDetails ? <FaChevronUp size={30} />  : <FaChevronDown size={30} />}
+              </div>
+            </div>
+          )}
+        {
+          showDetails && 
+          <div className="bg-white rounded-lg shadow-sm mb-8 transition-transform duration-100">
             <div className="p-6 flex justify-between items-center border-b border-gray-200">
               <h2 className="text-2xl font-semibold text-gray-800">
                 Course Details
@@ -333,10 +347,15 @@ const CourseDetailsPage = () => {
               </FormProvider>
             </div>
           </div>
-        )}
+        }
 
-        <div>
-          <Tabs className="px-[62px]" defaultActiveKey="1">
+        {error && <p>Error: {error}</p>}
+        {!loading && !error && (
+          <Tabs
+            className="px-[62px]"
+            defaultActiveKey="1"
+            style={{ width: "100%" }}
+          >
             <TabPane tab="Chapters" key="1">
               <ChapterList chapters={chapters} setChapters={setChapters} />
             </TabPane>
@@ -344,7 +363,7 @@ const CourseDetailsPage = () => {
               {courseId && <Quiz courseId={courseId} />}
             </TabPane>
           </Tabs>
-        </div>
+        )}
       </div>
     </div>
   );
