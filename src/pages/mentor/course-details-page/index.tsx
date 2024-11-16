@@ -1,9 +1,9 @@
-import { startTransition, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams, useNavigate } from "react-router-dom";
 import { FormProvider, useForm } from "react-hook-form";
 import { Select, Tabs, Tag } from "antd";
-import { FaArrowLeft, FaChevronDown, FaChevronUp, FaEdit, FaSave } from "react-icons/fa";
+import { FaArrowLeft, FaChevronDown, FaChevronUp } from "react-icons/fa";
 import { BiLoader } from "react-icons/bi";
 import { toast } from "react-toastify";
 
@@ -18,6 +18,7 @@ import ChapterList from "../../../components/molecule/chapter-list/ChapterList";
 import Input from "../../../components/molecule/input/Input";
 import Button from "../../../components/atoms/button";
 import Quiz from "../../../pages/quiz/quiz-dashboard";
+import { LuLoader2 } from "react-icons/lu";
 
 const { TabPane } = Tabs;
 
@@ -50,7 +51,6 @@ const CourseDetailsPage = () => {
   const { courseId } = useParams<{ courseId: string }>();
   const [isCreator, setIsCreator] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isEditMode, setIsEditMode] = useState(false);
   const [tags, setTags] = useState<string[]>([]);
   const [addTags, setAddTags] = useState("");
   const [removeTags, setRemoveTags] = useState<string[]>([]);
@@ -73,7 +73,7 @@ const CourseDetailsPage = () => {
       setIsCreator(true);
       dispatch(fetchCoursesByCreator({ creatorId: user.userId, authToken }));
     }
-  }, [dispatch, authToken, user?.userId]);
+  }, [authToken]);
 
   useEffect(() => {
     if (courses && courseId) {
@@ -94,13 +94,13 @@ const CourseDetailsPage = () => {
         setTags(course.tags);
       }
     }
-  }, [courses, courseId, methods]);
+  }, [courses, courseId]);
 
   useEffect(() => {
     if (authToken && courseId) {
       dispatch(getCourseChapter({ courseId, authToken }) as any);
     }
-  }, [dispatch, courseId, authToken]);
+  }, [courseId, authToken]);
 
   useEffect(() => {
     if (Array.isArray(initialChapters)) {
@@ -170,21 +170,23 @@ const CourseDetailsPage = () => {
       image: newImage,
     };
 
-    startTransition(() => {
-      dispatch(
+    try {
+      await dispatch(
         updateCourse({
           courseId,
           courseData: updatedData as any,
           headers: { Authorization: `Bearer ${authToken}` },
         })
-      );
-    });
-
-    setIsLoading(false);
-    setIsEditMode(false);
+      ).unwrap();
+      toast.success("Course updated successfully!");
+    } catch (error) {
+      toast.error("Failed to update course");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  if (loading) {
+  if (loading && !isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <BiLoader className="animate-spin text-4xl text-primary" />
@@ -215,34 +217,31 @@ const CourseDetailsPage = () => {
           <span>Go Back</span>
         </button>
 
-          {isCreator && (
-            <div className="flex justify-between items-center my-4">
-              <div className="font-bold">
-                Show/Edit Course Details
-              </div>
-              <div className="cursor-pointer" onClick={() => setShowDetails(!showDetails)}>
-                {showDetails ? <FaChevronUp size={30} />  : <FaChevronDown size={30} />}
-              </div>
+        {isCreator && (
+          <div
+            onClick={() => setShowDetails(!showDetails)}
+            className="mx-14 flex cursor-pointer max-w-7xl justify-between items-center border-b-2 border-black/55 my-4 "
+          >
+            <div className="font-bold">Edit Course Details</div>
+            <div>
+              {showDetails ? (
+                <FaChevronUp size={30} />
+              ) : (
+                <FaChevronDown size={30} />
+              )}
             </div>
-          )}
-        {
-          showDetails && 
-          <div className="bg-white rounded-lg shadow-sm mb-8 transition-transform duration-100">
+          </div>
+        )}
+        {showDetails && (
+          <div
+            className={`bg-white rounded-lg shadow-sm mx-10 mb-8 overflow-hidden transition-transform duration-700 ease-in-out ${
+              showDetails ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"
+            }`}
+          >
             <div className="p-6 flex justify-between items-center border-b border-gray-200">
               <h2 className="text-2xl font-semibold text-gray-800">
                 Course Details
               </h2>
-              <Button
-                className="flex items-center gap-2"
-                onClick={() => setIsEditMode(!isEditMode)}
-              >
-                {isEditMode ? (
-                  <FaSave className="text-lg" />
-                ) : (
-                  <FaEdit className="text-lg" />
-                )}
-                <span>{isEditMode ? "Save Mode" : "Edit"}</span>
-              </Button>
             </div>
 
             <div className="p-6">
@@ -252,30 +251,26 @@ const CourseDetailsPage = () => {
                   className="space-y-6"
                 >
                   <div className="space-y-4">
-                    {isEditMode ? (
-                      <Input
-                        type="file"
-                        label="Course Image"
-                        {...methods.register("image")}
-                      />
-                    ) : (
-                      currentCourse?.imageUrl && (
-                        <div className="w-60 h-40 overflow-hidden rounded-lg">
-                          <img
-                            src={currentCourse.imageUrl}
-                            alt="Course"
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      )
+                    {currentCourse?.imageUrl && (
+                      <div className="w-60 h-40 overflow-hidden rounded-lg">
+                        <img
+                          src={currentCourse.imageUrl}
+                          alt="Course"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
                     )}
+                    <Input
+                      type="file"
+                      label="Course Image"
+                      {...methods.register("image")}
+                    />
 
                     <Input
                       type="text"
                       label="Course Title"
                       placeholder="Enter the course title"
                       {...methods.register("title")}
-                      disabled={!isEditMode}
                     />
 
                     <Input
@@ -283,7 +278,6 @@ const CourseDetailsPage = () => {
                       label="Short Bio"
                       placeholder="Enter a short bio"
                       {...methods.register("shortBio")}
-                      disabled={!isEditMode}
                     />
 
                     <Input
@@ -291,14 +285,12 @@ const CourseDetailsPage = () => {
                       label="Description"
                       placeholder="Enter course description"
                       {...methods.register("description")}
-                      disabled={!isEditMode}
                     />
 
                     <Select
                       placeholder="Select Category"
                       {...methods.register("category")}
                       options={CATEGORY_OPTIONS}
-                      disabled={!isEditMode}
                       defaultValue={currentCourse?.category}
                       className="w-full"
                     />
@@ -337,17 +329,24 @@ const CourseDetailsPage = () => {
                   <div>
                     <Button
                       type="submit"
-                      className="px-6 py-2 text-white bg-primary rounded-md hover:bg-primary/80 transition-all"
+                      className={`px-6 py-2 ${isLoading ? "bg-gray-500 hover:bg-gray-500 text-black" : "text-white bg-primary rounded-md hover:bg-primary/80"} transition-all`}
                       disabled={isLoading}
                     >
-                      Update Course
+                      {isLoading ? (
+                        <div className="flex items-center gap-1.5">
+                          <span>Updating</span>
+                          <LuLoader2 className="animate-spin" />
+                        </div>
+                      ) : (
+                        "Update Course"
+                      )}
                     </Button>
                   </div>
                 </form>
               </FormProvider>
             </div>
           </div>
-        }
+        )}
 
         {error && <p>Error: {error}</p>}
         {!loading && !error && (
