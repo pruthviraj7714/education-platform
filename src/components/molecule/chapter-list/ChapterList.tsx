@@ -126,7 +126,7 @@ const ChapterList: React.FC<ChapterListProps> = ({ chapters, setChapters }) => {
           />
         ) : (
           <>
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between p-3">
               <h2 className="text-[20px] leading-[28px] font-semibold text-[#191919]">
                 Chapter List
               </h2>
