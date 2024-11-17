@@ -1,16 +1,21 @@
 import { useEffect, useState } from "react";
 import { FiArrowRight } from "react-icons/fi";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import Button from "../../../components/atoms/button";
-import { updateCourse } from "../../../redux/slices/mentorSlice";
+import {
+  fetchCoursesByCreator,
+  updateCourse,
+} from "../../../redux/slices/mentorSlice";
 import { RxDragHandleDots2 } from "react-icons/rx";
+import { AppDispatch, RootState } from "src/redux/store";
 
 interface ContentOrderProps {
   courseId: string;
   chapters: any[];
   quizes: any[];
-  prevOrder : string[];
+  prevOrder: string[];
+  creatorId: string;
 }
 
 export default function ContentList({
@@ -18,31 +23,33 @@ export default function ContentList({
   chapters,
   quizes,
   prevOrder,
+  creatorId,
 }: ContentOrderProps) {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const [contentItems, setContentItems] = useState<any[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [draggedItem, setDraggedItem] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const authToken = sessionStorage.getItem("authToken");
 
-  useEffect(() => {
+  const { creatorCourses: courses } = useSelector(
+    (state: RootState) => state.mentor
+  );
+
+  const updateLocalContentItems = (items: any[]) => {
     const allItems = [
       ...(chapters.map((c) => ({ ...c, type: "chapter" })) ?? []),
       ...(quizes.map((q) => ({ ...q, type: "quiz" })) ?? []),
     ];
 
-    const orderedItems = prevOrder
-      .map((id) => allItems.find((item) => item._id === id)) 
-      .filter(Boolean); 
+    const orderedItems = items
+      .map((id) => allItems.find((item) => item._id === id))
+      .filter(Boolean);
 
-
-    const remainingItems = allItems.filter(
-      (item) => !prevOrder.includes(item._id)
-    );
+    const remainingItems = allItems.filter((item) => !items.includes(item._id));
 
     setContentItems([...orderedItems, ...remainingItems]);
-  }, [prevOrder]);
+  };
 
   const handleDragStart = (e: React.DragEvent<HTMLLIElement>, item: any) => {
     setIsDragging(true);
@@ -59,23 +66,28 @@ export default function ContentList({
   const handleDrop = (e: React.DragEvent<HTMLLIElement>, targetItem: any) => {
     e.preventDefault();
     if (!draggedItem) return;
-  
+
     const newItems = [...contentItems];
     const draggedIndex = newItems.findIndex(
       (item) => item._id === draggedItem._id
     );
-    const targetIndex = newItems.findIndex((item) => item._id === targetItem._id);
-  
+    const targetIndex = newItems.findIndex(
+      (item) => item._id === targetItem._id
+    );
+
     if (draggedIndex === -1 || targetIndex === -1) return;
-  
+
     newItems.splice(draggedIndex, 1);
-  
-    const dropPosition = e.clientY < e.currentTarget.getBoundingClientRect().top + e.currentTarget.offsetHeight / 2
-      ? targetIndex
-      : targetIndex + 1; 
-  
+
+    const dropPosition =
+      e.clientY <
+      e.currentTarget.getBoundingClientRect().top +
+        e.currentTarget.offsetHeight / 2
+        ? targetIndex
+        : targetIndex + 1;
+
     newItems.splice(dropPosition, 0, draggedItem);
-  
+
     setContentItems(newItems);
     setIsDragging(false);
     setDraggedItem(null);
@@ -86,12 +98,12 @@ export default function ContentList({
     setDraggedItem(null);
   };
 
-  const updateContentOrder = () => {
+  const updateContentOrder = async () => {
     setIsLoading(true);
     try {
       const contentOrder = contentItems.map((item) => item._id.toString());
-      dispatch(
-        //@ts-ignore
+
+      await dispatch(
         updateCourse({
           courseId,
           courseData: {
@@ -102,7 +114,24 @@ export default function ContentList({
             Authorization: `Bearer ${authToken}`,
           },
         })
-      );
+      ).unwrap();
+
+      await dispatch(
+        fetchCoursesByCreator({
+          creatorId: creatorId,
+          authToken: authToken as string,
+        })
+      ).unwrap();
+
+      const updatedCourse = courses.find((c: any) => c._id === courseId);
+
+      if (!updatedCourse) {
+        toast.error("Error while fetching the course content");
+        return;
+      }
+
+      //@ts-ignore
+      updateLocalContentItems(updatedCourse?.contentOrder);
       toast.success("Content order updated successfully!");
     } catch (error) {
       console.error(error);
@@ -112,13 +141,16 @@ export default function ContentList({
     }
   };
 
+  useEffect(() => {
+    updateLocalContentItems(prevOrder);
+  }, [prevOrder, chapters, quizes]);
 
   return (
     <div className="p-4">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-semibold text-gray-800">Content Order</h1>
         <Button onClick={updateContentOrder} disabled={isLoading}>
-          {isLoading ? "Saving..."  : "Save Order" }
+          {isLoading ? "Saving..." : "Save Order"}
         </Button>
       </div>
       <ul className="space-y-2">
@@ -140,7 +172,7 @@ export default function ContentList({
                   // onClick={() => handleViewChapter(item._id || "")}
                   className=" flex items-center gap-1"
                 >
-                <RxDragHandleDots2 size={30} />
+                  <RxDragHandleDots2 size={30} />
                   {item.title}
                 </span>
                 <span className="text-sm text-gray-500">Chapter</span>

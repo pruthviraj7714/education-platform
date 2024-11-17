@@ -2,12 +2,12 @@ import { FormProvider, useForm } from "react-hook-form";
 import Input from "../../../components/molecule/input/Input";
 import Button from "../../../components/atoms/button";
 import { useEffect, useState } from "react";
-import { updateCourse } from "../../../redux/slices/mentorSlice";
+import { fetchCoursesByCreator, updateCourse } from "../../../redux/slices/mentorSlice";
 import { toast } from "react-toastify";
 import { Select, Tag } from "antd";
 import { LuLoader2 } from "react-icons/lu";
-import { AppDispatch } from "src/redux/store";
-import { useDispatch } from "react-redux";
+import { AppDispatch, RootState } from "src/redux/store";
+import { useDispatch, useSelector } from "react-redux";
 
 interface CourseFormData {
   title: string;
@@ -25,12 +25,12 @@ const CATEGORY_OPTIONS = [
 ];
 export default function DetailsTab({
   course,
-  isCreator,
   authToken,
+  creatorId
 }: {
   course: any;
-  isCreator: boolean;
   authToken: string;
+  creatorId : string;
 }) {
   const methods = useForm<CourseFormData>();
   const [tags, setTags] = useState<string[]>([]);
@@ -38,6 +38,10 @@ export default function DetailsTab({
   const dispatch = useDispatch<AppDispatch>();
   const [removeTags, setRemoveTags] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const {
+    loading,
+    creatorCourses: courses,
+  } = useSelector((state: RootState) => state.mentor);
 
   const handleAddTags = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && addTags.trim() !== "") {
@@ -103,6 +107,31 @@ export default function DetailsTab({
         })
       ).unwrap();
       toast.success("Course updated successfully!");
+
+      await dispatch(
+        fetchCoursesByCreator({
+          creatorId,
+          authToken
+        })
+      )
+      //@ts-ignore
+      let updatedCourse = courses.find(c => c._id === course._id);
+
+      if(!updatedCourse) {
+        toast.error("Error while fetching the course content")
+        return;
+      }
+      methods.reset({
+        title: updatedCourse.title,
+        description: updatedCourse.description,
+        shortBio: updatedCourse.shortBio,
+        tags: updatedCourse.tags || [],
+        //@ts-ignore
+        category: updatedCourse.category,
+        image: null,
+      });
+      setTags(updatedCourse.tags);
+
     } catch (error) {
       toast.error("Failed to update course");
     } finally {
@@ -127,13 +156,11 @@ export default function DetailsTab({
 
   return (
     <div>
-      {isCreator && (
-        <div className="mx-14 flex cursor-pointer max-w-7xl justify-between items-center my-4 ">
-          <div className="leading-[28px] font-semibold text-[#191919] text-xl">
-            Course Details
-          </div>
-        </div>
-      )}
+      <div className="flex items-center justify-between p-3">
+        <h2 className="text-[20px] leading-[28px] font-semibold text-[#191919]">
+          Course Details
+        </h2>
+      </div>
 
       <div
         className={`bg-white rounded-lg shadow-sm mx-10 mb-8 overflow-hidden transition-transform duration-700 ease-in-out`}

@@ -23,7 +23,6 @@ interface Chapter {
   _id?: string;
 }
 
-
 const CourseDetailsPage = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
@@ -50,11 +49,11 @@ const CourseDetailsPage = () => {
   const authToken = sessionStorage.getItem("authToken");
 
   useEffect(() => {
-    if (user && authToken && user.roles.includes("creator")) {
+    if (authToken && user && user.roles.includes("creator")) {
       setIsCreator(true);
       dispatch(fetchCoursesByCreator({ creatorId: user.userId, authToken }));
     }
-  }, [authToken]);
+  }, []);
 
   useEffect(() => {
     if (courses && courseId) {
@@ -62,16 +61,6 @@ const CourseDetailsPage = () => {
       const course = courses.find((c) => c._id === courseId);
       if (course) {
         setCurrentCourse(course);
-        // methods.reset({
-        //   title: course.title,
-        //   description: course.description,
-        //   shortBio: course.shortBio,
-        //   tags: course.tags || [],
-        //   //@ts-ignore
-        //   category: course.category,
-        //   image: null,
-        // });
-        // setTags(course.tags);
       }
     }
   }, [courses, courseId]);
@@ -80,7 +69,7 @@ const CourseDetailsPage = () => {
     if (authToken && courseId) {
       dispatch(getCourseChapter({ courseId, authToken }) as any);
     }
-  }, [courseId, authToken]);
+  }, [courseId]);
 
   useEffect(() => {
     if (Array.isArray(initialChapters)) {
@@ -125,41 +114,46 @@ const CourseDetailsPage = () => {
         </button>
 
         {error && <p>Error: {error}</p>}
-          <Tabs
-            className="px-[62px]"
-            defaultActiveKey="1"
-            style={{ width: "100%" }}
-          >
+        <Tabs
+          className="px-[62px]"
+          defaultActiveKey="1"
+          style={{ width: "100%" }}
+        >
+          {isCreator && (
             <TabPane tab="Details" key="1">
-              <DetailsTab course={currentCourse} isCreator={isCreator} authToken={authToken!}  />
+              <DetailsTab course={currentCourse} authToken={authToken!} creatorId={user?.userId!} />
             </TabPane>
-            <TabPane tab="Chapters" key="2">
-              <ChapterList chapters={chapters} setChapters={setChapters} />
-            </TabPane>
-            <TabPane tab="Quiz" key="3">
-              {courseId && (
-                <Quiz
-                  courseId={courseId}
-                  quiz={quiz}
-                  deleteQuiz={handleDeleteQuiz}
-                  updateQuiz={handleUpdateQuiz}
-                  loading={quizLoding}
-                  error={quizError}
-                />
-              )}
-            </TabPane>
-            <TabPane tab="Order" key="4">
-              {courseId && (
-                <ContentList
-                  chapters={chapters}
-                  courseId={courseId}
-                  quizes={quiz}
+          )}
+          <TabPane tab="Chapters" key="2">
+            <ChapterList chapters={chapters} setChapters={setChapters} />
+          </TabPane>
+          <TabPane tab="Quiz" key="3">
+            {courseId && (
+              <Quiz
+                courseId={courseId}
+                quiz={quiz}
+                deleteQuiz={handleDeleteQuiz}
+                updateQuiz={handleUpdateQuiz}
+                loading={quizLoding}
+                error={quizError}
+              />
+            )}
+          </TabPane>
+          <TabPane tab="Order" key="4">
+            {courseId && (
+              <ContentList
+                chapters={chapters}
+                courseId={courseId}
+                quizes={quiz}
+                creatorId={user?.userId!}
+                prevOrder={
                   //@ts-ignore
-                  prevOrder={courses.find(c => c._id === courseId)?.contentOrder ?? []}
-                />
-              )}
-            </TabPane>
-          </Tabs>
+                  courses.find((c) => c._id === courseId)?.contentOrder ?? []
+                }
+              />
+            )}
+          </TabPane>
+        </Tabs>
       </div>
     </div>
   );
