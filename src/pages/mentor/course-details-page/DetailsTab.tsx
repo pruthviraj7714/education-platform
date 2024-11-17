@@ -39,7 +39,6 @@ export default function DetailsTab({
   const [removeTags, setRemoveTags] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const {
-    loading,
     creatorCourses: courses,
   } = useSelector((state: RootState) => state.mentor);
 
