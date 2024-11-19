@@ -2,7 +2,10 @@ import { FormProvider, useForm } from "react-hook-form";
 import Input from "../../../components/molecule/input/Input";
 import Button from "../../../components/atoms/button";
 import { useEffect, useState } from "react";
-import { fetchCoursesByCreator, updateCourse } from "../../../redux/slices/mentorSlice";
+import {
+  fetchCoursesByCreator,
+  updateCourse,
+} from "../../../redux/slices/mentorSlice";
 import { toast } from "react-toastify";
 import { Select, Tag } from "antd";
 import { LuLoader2 } from "react-icons/lu";
@@ -26,11 +29,11 @@ const CATEGORY_OPTIONS = [
 export default function DetailsTab({
   course,
   authToken,
-  creatorId
+  creatorId,
 }: {
   course: any;
   authToken: string;
-  creatorId : string;
+  creatorId: string;
 }) {
   const methods = useForm<CourseFormData>();
   const [tags, setTags] = useState<string[]>([]);
@@ -38,9 +41,9 @@ export default function DetailsTab({
   const dispatch = useDispatch<AppDispatch>();
   const [removeTags, setRemoveTags] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const {
-    creatorCourses: courses,
-  } = useSelector((state: RootState) => state.mentor);
+  const { creatorCourses: courses } = useSelector(
+    (state: RootState) => state.mentor
+  );
 
   const handleAddTags = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && addTags.trim() !== "") {
@@ -64,6 +67,8 @@ export default function DetailsTab({
   const onSubmit = async (data: CourseFormData) => {
     setIsLoading(true);
     let newImage = course?.imageUrl;
+
+    console.log(data.category);
 
     if (data.image && data.image[0]) {
       const formData = new FormData();
@@ -94,7 +99,6 @@ export default function DetailsTab({
       addTags: tags,
       ...(removeTags.length > 0 && { removeTags }),
       imageUrl: newImage,
-      image: newImage,
     };
 
     try {
@@ -110,14 +114,14 @@ export default function DetailsTab({
       await dispatch(
         fetchCoursesByCreator({
           creatorId,
-          authToken
+          authToken,
         })
-      )
+      );
       //@ts-ignore
-      let updatedCourse = courses.find(c => c._id === course._id);
+      let updatedCourse = courses.find((c) => c._id === course._id);
 
-      if(!updatedCourse) {
-        toast.error("Error while fetching the course content")
+      if (!updatedCourse) {
+        toast.error("Error while fetching the course content");
         return;
       }
       methods.reset({
@@ -130,7 +134,6 @@ export default function DetailsTab({
         image: null,
       });
       setTags(updatedCourse.tags);
-
     } catch (error) {
       toast.error("Failed to update course");
     } finally {
@@ -209,9 +212,11 @@ export default function DetailsTab({
 
                 <Select
                   placeholder="Select Category"
-                  {...methods.register("category")}
-                  options={CATEGORY_OPTIONS}
-                  defaultValue={course?.category}
+                  options={CATEGORY_OPTIONS} 
+                  value={methods.watch("category")}
+                  onChange={(selectedOption) => {
+                    methods.setValue("category", selectedOption); 
+                  }}
                   className="w-full"
                 />
 

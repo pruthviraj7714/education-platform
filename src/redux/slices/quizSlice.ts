@@ -16,6 +16,7 @@ interface Question {
   courseId: string;
   creatorId: string;
   quizId: string;
+  explanation : string;
   createdAt: string;
   updatedAt: string;
 }
@@ -53,6 +54,7 @@ export const createQuizWithQuestions = createAsyncThunk(
           questionType: "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT";
           content: string;
           solution: Solution;
+          explanation : string;
         }[];
       };
     },
@@ -67,6 +69,7 @@ export const createQuizWithQuestions = createAsyncThunk(
         questions: quizData.questions.map((question) => ({
           questionType: question.questionType,
           content: question.content,
+          explanation : question.explanation,
           solution: {
             solution: question.solution.solution,
             options: question.solution.options || [],
@@ -255,6 +258,7 @@ export const overwriteQuizQuestions = createAsyncThunk(
           questionType: "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT";
           content: string;
           solution: Solution;
+          explanation : string;
         }[];
       };
     },
@@ -269,6 +273,7 @@ export const overwriteQuizQuestions = createAsyncThunk(
         questions: updatedData.questions.map((question) => ({
           questionType: question.questionType,
           content: question.content,
+          explanation : question.explanation,
           solution: {
             solution: question.solution.solution,
             options: question.solution.options || [],

@@ -30,6 +30,7 @@ const CourseDetailsPage = () => {
   const { courseId } = useParams<{ courseId: string }>();
   const [isCreator, setIsCreator] = useState(false);
   const [chapters, setChapters] = useState<Chapter[]>([]);
+  const authToken = sessionStorage.getItem("authToken");
 
   const {
     chapters: initialChapters,
@@ -46,14 +47,13 @@ const CourseDetailsPage = () => {
     handleUpdateQuiz,
   } = useQuiz(courseId as string);
 
-  const authToken = sessionStorage.getItem("authToken");
 
   useEffect(() => {
-    if (authToken && user && user.roles.includes("creator")) {
+    if (user && user.roles.includes("creator")) {
       setIsCreator(true);
-      dispatch(fetchCoursesByCreator({ creatorId: user.userId, authToken }));
+      dispatch(fetchCoursesByCreator({ creatorId: user.userId, authToken : authToken! }));
     }
-  }, []);
+  }, [user, dispatch, authToken]);
 
   useEffect(() => {
     if (courses && courseId) {
@@ -63,13 +63,13 @@ const CourseDetailsPage = () => {
         setCurrentCourse(course);
       }
     }
-  }, [courses, courseId]);
+  }, [courses,courseId]);
 
   useEffect(() => {
     if (authToken && courseId) {
       dispatch(getCourseChapter({ courseId, authToken }) as any);
     }
-  }, [courseId]);
+  }, [dispatch,courseId]);
 
   useEffect(() => {
     if (Array.isArray(initialChapters)) {

@@ -28,25 +28,21 @@ interface QuizFormValues {
     question: string;
     options: { option: string }[];
     correctAnswer: string | string[];
+    explanation: string;
   }[];
 }
-
-
 
 function QuizBuilder() {
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
   const { courseId } = useParams<{ courseId: string }>();
-  const { quiz } = useSelector(
-    (state: RootState) => state.quiz
-  );
+  const { quiz } = useSelector((state: RootState) => state.quiz);
   const location = useLocation(); // <-- Hook to access the URL query parameters
 
   // Parse query parameters from the current location's search
   const searchParams = new URLSearchParams(location.search);
   const isEditing = searchParams.get("isEditing") === "true"; // Parse as boolean
   const quizId = searchParams.get("quizId");
-  console.log("Quiz", isEditing, quizId);
   const methods = useForm<QuizFormValues>({
     defaultValues: {
       quizName: "",
@@ -62,6 +58,7 @@ function QuizBuilder() {
             { option: "" },
           ],
           correctAnswer: [],
+          explanation: "",
         },
       ],
     },
@@ -72,11 +69,9 @@ function QuizBuilder() {
     control,
     name: "questions",
   });
-  console.log("Quiz ID", quizId);
   useEffect(() => {
     if (isEditing && quizId && courseId) {
       dispatch(getQuizById({ courseId, quizId }));
-      console.log(getQuizById({ courseId, quizId }));
     }
   }, [isEditing, quizId, courseId, dispatch]);
 
@@ -98,6 +93,7 @@ function QuizBuilder() {
             ? q.solution.options.map((option) => ({ option }))
             : [],
           correctAnswer: q.solution.solution,
+          explanation: q.explanation,
         })),
       };
       reset(formattedQuizData);
@@ -110,6 +106,7 @@ function QuizBuilder() {
       question: "",
       options: [{ option: "" }, { option: "" }, { option: "" }, { option: "" }],
       correctAnswer: [],
+      explanation: "",
     });
   };
 
@@ -128,6 +125,7 @@ function QuizBuilder() {
         return {
           questionType,
           content: q.question,
+          explanation: q.explanation,
           solution: {
             solution:
               questionType === "SINGLE_CHOICE"
@@ -160,11 +158,13 @@ function QuizBuilder() {
             },
           })
         ).unwrap();
-        await dispatch(overwriteQuizQuestions({
-          courseId,
-          quizId,
-          updatedData: formattedQuizData,
-        }));
+        await dispatch(
+          overwriteQuizQuestions({
+            courseId,
+            quizId,
+            updatedData: formattedQuizData,
+          })
+        );
       } else {
         await dispatch(
           createQuizWithQuestions({ courseId, quizData: formattedQuizData })
@@ -287,24 +287,56 @@ function QuizBuilder() {
                       >
                         Add Answer
                       </Button>
+                      <div className="mt-3">
+                        <Controller
+                          name={`questions.${index}.explanation`}
+                          control={control}
+                          render={({ field }) => (
+                            <Input
+                              name={`questions.${index}.explanation`}
+                              value={field.value}
+                              onChange={(e) => field.onChange(e.target.value)}
+                              label="explanation"
+                              placeholder="Enter an explanation for the correct answer here"
+                              className="mb-4"
+                            />
+                          )}
+                        />
+                      </div>
                     </div>
                   )}
                 />
               ) : (
-                <Controller
-                  name={`questions.${index}.correctAnswer`}
-                  control={control}
-                  render={({ field }) => (
-                    <Input
-                      name={`questions.${index}.correctAnswer`}
-                      value={field.value}
-                      onChange={(e) => field.onChange(e.target.value)}
-                      label="Correct Answer"
-                      placeholder="Enter the correct answer"
-                      className="mb-4"
-                    />
-                  )}
-                />
+                <>
+                  <Controller
+                    name={`questions.${index}.correctAnswer`}
+                    control={control}
+                    render={({ field }) => (
+                      <Input
+                        name={`questions.${index}.correctAnswer`}
+                        value={field.value}
+                        onChange={(e) => field.onChange(e.target.value)}
+                        label="Correct Answer"
+                        placeholder="Enter the correct answer"
+                        className="mb-4"
+                      />
+                    )}
+                  />
+                  <Controller
+                    name={`questions.${index}.explanation`}
+                    control={control}
+                    render={({ field }) => (
+                      <Input
+                        name={`questions.${index}.explanation`}
+                        value={field.value}
+                        onChange={(e) => field.onChange(e.target.value)}
+                        label="Explanation"
+                        placeholder="Enter an explanation for the correct answer here"
+                        className="mb-4 mt-4"
+                      />
+                    )}
+                  />
+                </>
               )}
 
               <div className="flex justify-end mt-4">
