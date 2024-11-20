@@ -23,6 +23,8 @@ const Chapters = React.lazy(() => import("../pages/mentor/chapters"));
 const QuizBuilder = React.lazy(() => import("../pages/quiz/quiz-builder"));
 const QuizDashbaord = React.lazy(() => import("../pages/quiz/quiz-dashboard"));
 const Quiz = React.lazy(() => import("../pages/quiz/quiz"));
+const LearnerCourses = React.lazy(() => import("../pages/learner/courses"));
+const CoursePage = React.lazy(() => import("../pages/learner/course-page"));
 
 const Router: React.FC = () => {
   return (
@@ -114,6 +116,22 @@ const Router: React.FC = () => {
               }
             />
             <Route path="/learner/dashboard" element={<LearnerDashboard />} />
+            <Route
+              path="/learner/courses"
+              element={
+                <PrivateRoute>
+                  <LearnerCourses />
+                </PrivateRoute>
+              }
+            />
+             <Route
+              path="/learner/course-page/:courseId"
+              element={
+                <PrivateRoute>
+                  <CoursePage />
+                </PrivateRoute>
+              }
+            />
           </Route>
         </Routes>
       </Suspense>

@@ -16,10 +16,9 @@ const TopBar: React.FC<TopBarProps> = () => {
   const navigate = useNavigate();
   const [isCreator, setIsCreator] = useState<boolean | null>(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const authToken = sessionStorage.getItem("authToken");
 
-  const { loading, user } = useSelector(
-    (state: any) => state.auth
-  );
+  const { loading, user } = useSelector((state: any) => state.auth);
 
   useEffect(() => {
     if (!loading && user && user.roles.includes("creator")) {
@@ -38,23 +37,12 @@ const TopBar: React.FC<TopBarProps> = () => {
   };
 
   const goBackToHome = () => {
-    const authToken = sessionStorage.getItem("authToken");
-
-    if (!authToken) {
-      navigate("/");
-      return;
-    }
-
-    if (!loading && user) {
-      if (!isCreator) {
-        navigate("/learner/dashboard");
-      } else {
-        navigate("/dashboard");
-      }
+    if (!isCreator) {
+      navigate("/learner/dashboard");
+    } else {
+      navigate("/dashboard");
     }
   };
-
-  const authToken = sessionStorage.getItem("authToken");
 
   const showLoginButton = location.pathname !== "/";
 
@@ -84,12 +72,16 @@ const TopBar: React.FC<TopBarProps> = () => {
       {authToken && (
         <div className="flex items-center gap-4">
           <div>
-            {isCreator && (
+            {isCreator ? (
               <Button
                 onClick={() => {
                   navigate("/dashboard");
                 }}
               >
+                My Courses
+              </Button>
+            ) : (
+              <Button onClick={() => navigate("/learner/courses")}>
                 My Courses
               </Button>
             )}

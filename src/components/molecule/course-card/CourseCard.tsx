@@ -40,7 +40,7 @@ const CourseCard: React.FC<CourseCardProps> = ({
   onClick,
 }) => {
   const location = useLocation();
-  const isLearnerDashboard = location.pathname === "/learner/dashboard";
+  const isLearnerDashboard = location.pathname === "/learner/dashboard" || "/learner/courses";
   const [isTruncated, setIsTruncated] = useState(true);
   const maxDescriptionLength = 40;
 
