@@ -8,7 +8,6 @@ import { useDispatch } from "react-redux";
 import {
   updateChapter,
   deleteChapter,
-  getCourseChapter,
 } from "../../../redux/slices/mentorSlice";
 import { AppDispatch } from "../../../redux/store";
 
@@ -46,47 +45,55 @@ const ChapterList: React.FC<ChapterListProps> = ({ chapters, setChapters }) => {
     newChapter: Chapter,
     event?: React.FormEvent<HTMLFormElement>
   ) => {
-    if (event) event.preventDefault();
-    const authToken = sessionStorage.getItem("authToken") || "";
+    event?.preventDefault();
+    const authToken = sessionStorage.getItem("authToken");
 
-    if (isAddingChapter) {
-      setChapters([...chapters, newChapter]);
-    } else if (editingChapterIndex !== null) {
-      const chapterToUpdate = chapters[editingChapterIndex];
-      if (chapterToUpdate && courseId) {
-        try {
-          const updatedChapter = await dispatch(
-            updateChapter({
-              chapterId: chapterToUpdate._id || "",
-              chapterData: newChapter,
-              courseId,
-              headers: { Authorization: `Bearer ${authToken}` },
-            })
-          ).unwrap();
-
-          const updatedChapters = [...chapters];
-          updatedChapters[editingChapterIndex] = updatedChapter;
-          setChapters(updatedChapters);
-        } catch (error) {
-          console.error("Failed to update chapter:", error);
-        }
-      }
+    if (!authToken) {
+      console.error("Authentication token missing!");
+      return;
     }
+
     try {
-      if (courseId && authToken) {
-        const fetchedChapters = await dispatch(
-          getCourseChapter({ courseId, authToken })
+      if (isAddingChapter && courseId) {
+        const addedChapter = await dispatch(
+          updateChapter({
+            chapterData: newChapter,
+            courseId,
+            chapterId: newChapter?._id as string,
+            headers: { Authorization: `Bearer ${authToken}` },
+          })
         ).unwrap();
-        setChapters(fetchedChapters);
-      } else {
-        console.error("Missing courseId or authToken");
-      }
-    } catch (error) {
-      console.error("Failed to fetch chapters after saving:", error);
-    }
 
-    setIsAddingChapter(false);
-    setEditingChapterIndex(null);
+        setChapters((prev) => [...prev, addedChapter]);
+      } else if (editingChapterIndex !== null && courseId) {
+        const chapterToUpdate = chapters[editingChapterIndex];
+
+        if (!chapterToUpdate) {
+          console.error("Invalid chapter selected for editing!");
+          return;
+        }
+
+        const updatedChapter = await dispatch(
+          updateChapter({
+            chapterId: chapterToUpdate._id || "",
+            chapterData: newChapter,
+            courseId,
+            headers: { Authorization: `Bearer ${authToken}` },
+          })
+        ).unwrap();
+
+        setChapters((prev) =>
+          prev.map((chapter, index) =>
+            index === editingChapterIndex ? updatedChapter : chapter
+          )
+        );
+      }
+
+      setIsAddingChapter(false);
+      setEditingChapterIndex(null);
+    } catch (error) {
+      console.error("Failed to save chapter:", error);
+    }
   };
 
   const handleDeleteChapter = async (chapterId: string) => {

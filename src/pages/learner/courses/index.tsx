@@ -19,17 +19,16 @@ function Index() {
     if (authToken) {
       dispatch(fetchEnrolledCourses(authToken));
     }
-    console.log(enrolledCourses);
   }, [authToken]);
 
   const handleNavigateToCourseDetails = (courseId: string) => {
-      navigate(`/learner/course-page/${courseId}`);
+    navigate(`/learner/course-page/${courseId}`);
   };
 
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
-        <LuLoader2 className="animate-spin text-orange-400" />
+        <LuLoader2 className="animate-spin size-10 text-orange-400" />
       </div>
     );
   }

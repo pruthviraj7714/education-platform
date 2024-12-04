@@ -49,7 +49,7 @@ const CourseCard: React.FC<CourseCardProps> = ({
   };
 
   const truncatedDescription =
-    isTruncated && description.length > maxDescriptionLength
+    isTruncated && description?.length > maxDescriptionLength
       ? `${description.substring(0, maxDescriptionLength)}...`
       : description;
 
@@ -66,7 +66,7 @@ const CourseCard: React.FC<CourseCardProps> = ({
 
         <div className="mt-4">
           <div className="flex flex-wrap mt-2">
-            {tags.map((tag, index) => (
+            {tags?.map((tag, index) => (
               <span
                 key={index}
                 className="inline-block bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full mr-2 mb-2 uppercase font-semibold tracking-wide"

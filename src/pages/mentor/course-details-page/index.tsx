@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { Tabs } from "antd";
 import { FaArrowLeft } from "react-icons/fa";
 import { BiLoader } from "react-icons/bi";
@@ -26,11 +26,10 @@ interface Chapter {
 const CourseDetailsPage = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const [currentCourse, setCurrentCourse] = useState<any>(null);
   const { courseId } = useParams<{ courseId: string }>();
-  const [isCreator, setIsCreator] = useState(false);
-  const [chapters, setChapters] = useState<Chapter[]>([]);
   const authToken = sessionStorage.getItem("authToken");
+  const [searchParams] = useSearchParams();
+  const activeTabKey = searchParams.get('activeTab');
 
   const {
     chapters: initialChapters,
@@ -39,19 +38,34 @@ const CourseDetailsPage = () => {
     creatorCourses: courses,
   } = useSelector((state: RootState) => state.mentor);
   const { user } = useSelector((state: RootState) => state.auth);
+
+  const isCreator = useMemo(() => {
+    return (
+      user?.roles?.includes("creator") &&
+      //@ts-ignore
+      courses?.some((course) => course._id === courseId)
+    );
+  }, []);
+
+  const [currentCourse, setCurrentCourse] = useState<any>(null);
+  const [chapters, setChapters] = useState<Chapter[]>([]);
+
   const {
     error: quizError,
     handleDeleteQuiz,
-    isLoading: quizLoding,
+    isLoading: quizLoading,
     quiz,
     handleUpdateQuiz,
   } = useQuiz(courseId as string);
 
-
   useEffect(() => {
-    if (user && user.roles.includes("creator")) {
-      setIsCreator(true);
-      dispatch(fetchCoursesByCreator({ creatorId: user.userId, authToken : authToken! }));
+    if (user?.roles?.includes("creator")) {
+      dispatch(
+        fetchCoursesByCreator({
+          creatorId: user.userId,
+          authToken: authToken || "",
+        })
+      );
     }
   }, [user, dispatch, authToken]);
 
@@ -63,19 +77,19 @@ const CourseDetailsPage = () => {
         setCurrentCourse(course);
       }
     }
-  }, [courses,courseId]);
+  }, [courses, courseId]);
 
   useEffect(() => {
     if (authToken && courseId) {
-      dispatch(getCourseChapter({ courseId, authToken }) as any);
+      dispatch(getCourseChapter({ courseId, authToken }));
     }
-  }, [dispatch,courseId]);
+  }, [dispatch, courseId]);
 
   useEffect(() => {
     if (Array.isArray(initialChapters)) {
       const formattedChapters: Chapter[] = initialChapters.map((chapter) => ({
-        title: chapter?.title,
-        content: chapter?.content,
+        title: chapter?.title || "",
+        content: chapter?.content || "",
         _id: chapter?._id,
       }));
       setChapters(formattedChapters);
@@ -94,34 +108,34 @@ const CourseDetailsPage = () => {
     return <div className="p-6 text-red-500">Error: {error}</div>;
   }
 
+  const handleGoBack = () => {
+    const dashboardRoute = isCreator ? "/dashboard" : "/learner/dashboard";
+    navigate(dashboardRoute);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <button
-          onClick={() => {
-            if (!isCreator) {
-              navigate("/learner/dashboard");
-              return;
-            } else {
-              navigate("/dashboard");
-              return;
-            }
-          }}
+          onClick={handleGoBack}
           className="flex items-center gap-2 text-primary hover:text-primary/80 mb-6 transition-all"
         >
           <FaArrowLeft className="text-lg" />
           <span>Go Back</span>
         </button>
 
-        {error && <p>Error: {error}</p>}
         <Tabs
           className="px-[62px]"
-          defaultActiveKey="1"
+          defaultActiveKey={activeTabKey ? activeTabKey : "1"}
           style={{ width: "100%" }}
         >
           {isCreator && (
             <TabPane tab="Details" key="1">
-              <DetailsTab course={currentCourse} authToken={authToken!} creatorId={user?.userId!} />
+              <DetailsTab
+                course={currentCourse}
+                authToken={authToken || ""}
+                creatorId={user?.userId || ""}
+              />
             </TabPane>
           )}
           <TabPane tab="Chapters" key="2">
@@ -134,25 +148,27 @@ const CourseDetailsPage = () => {
                 quiz={quiz}
                 deleteQuiz={handleDeleteQuiz}
                 updateQuiz={handleUpdateQuiz}
-                loading={quizLoding}
+                loading={quizLoading}
                 error={quizError}
               />
             )}
           </TabPane>
-          <TabPane tab="Order" key="4">
-            {courseId && (
-              <ContentList
-                chapters={chapters}
-                courseId={courseId}
-                quizes={quiz}
-                creatorId={user?.userId!}
-                prevOrder={
-                  //@ts-ignore
-                  courses.find((c) => c._id === courseId)?.contentOrder ?? []
-                }
-              />
-            )}
-          </TabPane>
+          {isCreator && (
+            <TabPane tab="Order" key="4">
+              {courseId && (
+                <ContentList
+                  chapters={chapters}
+                  courseId={courseId}
+                  quizes={quiz}
+                  creatorId={user?.userId || ""}
+                  prevOrder={
+                    //@ts-ignore
+                    courses.find((c) => c._id === courseId)?.contentOrder ?? []
+                  }
+                />
+              )}
+            </TabPane>
+          )}
         </Tabs>
       </div>
     </div>

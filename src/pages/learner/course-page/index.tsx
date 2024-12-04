@@ -119,7 +119,6 @@ export default function CoursePage() {
   useEffect(() => {
     const currentContent = orderedContent[currentContentIndex];
     if (!currentContent || !courseId || !authToken) return;
-    console.log(questions);
 
     if (currentContent.type === "CHAPTER") {
       dispatch(
@@ -127,7 +126,6 @@ export default function CoursePage() {
       );
     } else {
       dispatch(getQuiz(courseId));
-      setCurrentQuizIndex(prev => prev + 1);
     }
   }, [currentContentIndex, orderedContent, courseId, authToken, dispatch]);
 
@@ -204,13 +202,22 @@ export default function CoursePage() {
 
       const currentContent = orderedContent[prev];
       const nextContent = orderedContent[newIndex];
+
       if (currentContent?.type === "QUIZ" && nextContent?.type !== "QUIZ") {
         setQuizState({
           submitted: false,
-          totalMarks: 0,
+          totalMarks: null,
           selectedAnswers: {},
           showExplanations: false,
         });
+      }
+
+      if (direction === "next" && nextContent?.type === "QUIZ") {
+        setCurrentQuizIndex((prevIndex) =>
+          Math.min(prevIndex + 1, (quiz || []).length - 1)
+        );
+      } else if (direction === "prev" && currentContent?.type === "QUIZ") {
+        setCurrentQuizIndex((prevIndex) => Math.max(prevIndex - 1, 0));
       }
 
       return newIndex;
@@ -218,13 +225,14 @@ export default function CoursePage() {
   };
 
   const renderQuizQuestion = (question: Question) => {
-    const selectedAnswer = quizState.selectedAnswers[question._id];
+    const selectedAnswer = quizState.selectedAnswers[question?._id];
     const isCorrect =
       quizState.submitted &&
       (Array.isArray(selectedAnswer)
-        ? selectedAnswer.includes(question.solution.solution)
-        : selectedAnswer === question.solution.solution);
+        ? selectedAnswer.includes(question?.solution.solution)
+        : selectedAnswer === question?.solution.solution);
 
+    if (!question) return null;
     return (
       <div
         key={question._id}
@@ -236,7 +244,7 @@ export default function CoursePage() {
             : ""
         }`}
       >
-        <p className="font-medium">{question.content}</p>
+        <p className="font-medium">{question?.content}</p>
 
         {question.questionType === "SINGLE_CHOICE" && (
           <div className="space-y-2">
@@ -279,7 +287,6 @@ export default function CoursePage() {
 
   const renderContent = () => {
     const currentContent = orderedContent[currentContentIndex];
-  
 
     if (!currentContent) {
       return <div>No content available</div>;
@@ -314,7 +321,7 @@ export default function CoursePage() {
         </div>
 
         <div className="space-y-6">
-          {questions.map((question) => renderQuizQuestion(question as any))}
+          {renderQuizQuestion(questions[currentQuizIndex] as any)}
         </div>
 
         <div className="flex justify-between items-center mt-6 pt-4 border-t">
@@ -381,7 +388,11 @@ export default function CoursePage() {
                     ? "bg-white bg-opacity-20 border-l-4 border-yellow-400"
                     : "hover:bg-white hover:bg-opacity-10"
                 }`}
-                onClick={() => setCurrentContentIndex(index)}
+                onClick={() => {
+                  item.type === "QUIZ" && index > currentQuizIndex && setCurrentQuizIndex(prev => prev + 1);
+                  item.type === "QUIZ" && index < currentQuizIndex && setCurrentQuizIndex(prev => prev - 1); 
+                  setCurrentContentIndex(index)
+                }}
               >
                 {item.type === "CHAPTER" ? (
                   <BookOpen className="w-5 h-5 flex-shrink-0" />

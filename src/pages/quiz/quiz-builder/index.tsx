@@ -18,7 +18,8 @@ import {
 } from "../../../redux/slices/quizSlice";
 import { AppDispatch, RootState } from "../../../redux/store";
 import { FaArrowLeft } from "react-icons/fa";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { Modal } from "antd";
 
 interface QuizFormValues {
   quizName: string;
@@ -38,6 +39,7 @@ function QuizBuilder() {
   const { courseId } = useParams<{ courseId: string }>();
   const { quiz } = useSelector((state: RootState) => state.quiz);
   const location = useLocation(); // <-- Hook to access the URL query parameters
+  const [isValidModal, setIsValidModal] = useState(false);
 
   // Parse query parameters from the current location's search
   const searchParams = new URLSearchParams(location.search);
@@ -110,7 +112,27 @@ function QuizBuilder() {
     });
   };
 
+  const validateQuiz = (questions: QuizFormValues["questions"]) => {
+    return questions.every((q) => {
+      if (q.questionType !== "text") {
+        const validAnswers = Array.isArray(q.correctAnswer)
+          ? q.correctAnswer
+          : [q.correctAnswer];
+        return validAnswers.every((ans) =>
+          q.options.some((opt) => opt.option === ans)
+        );
+      }
+
+      return true;
+    });
+  };
+
   const onSubmit = async (data: QuizFormValues) => {
+    const isQuizValid = validateQuiz(data.questions);
+    if (!isQuizValid) {
+      setIsValidModal(true);
+      return;
+    }
     const formattedQuizData = {
       title: data.quizName,
       description: data.quizDescription,
@@ -170,7 +192,7 @@ function QuizBuilder() {
           createQuizWithQuestions({ courseId, quizData: formattedQuizData })
         ).unwrap();
       }
-      navigate(`/course-details/${courseId}`);
+      navigate(`/course-details/${courseId}?activeTab=${3}`);
     } catch (error) {
       console.error("Error creating or updating quiz:", error);
     }
@@ -369,6 +391,23 @@ function QuizBuilder() {
             </Button>
           </div>
         </div>
+        {isValidModal && (
+          <Modal
+            title="Invalid Answers"
+            visible={isValidModal}
+            onCancel={() => setIsValidModal(false)}
+            footer={[
+              <Button key="ok" onClick={() => setIsValidModal(false)}>
+                OK
+              </Button>,
+            ]}
+          >
+            <p>
+              Please ensure all correct answers are included in the options for
+              each question.
+            </p>
+          </Modal>
+        )}
       </form>
     </FormProvider>
   );

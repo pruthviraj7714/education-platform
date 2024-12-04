@@ -15,6 +15,7 @@ import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 import { Modal } from "antd";
 import { enrollCourse } from "../../../redux/slices/enrollSlice";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 function Index() {
   const methods = useForm();
@@ -46,6 +47,8 @@ function Index() {
   }>({});
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
   const authToken = sessionStorage.getItem("authToken");
+
+  const navigate = useNavigate();
 
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
@@ -100,6 +103,7 @@ function Index() {
     );
     if (response.meta.requestStatus === "fulfilled") {
       toast.success("Course enrollment successful!");
+      navigate(`/learner/course-page/${courseId}`)
     } else {
       toast.error("Failed to enroll into the course");
     }

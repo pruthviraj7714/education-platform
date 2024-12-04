@@ -68,8 +68,6 @@ export default function DetailsTab({
     setIsLoading(true);
     let newImage = course?.imageUrl;
 
-    console.log(data.category);
-
     if (data.image && data.image[0]) {
       const formData = new FormData();
       formData.append("image", data.image[0]);
