@@ -18,10 +18,18 @@ import DetailsTab from "../course-details-page/DetailsTab";
 const { TabPane } = Tabs;
 
 interface Chapter {
-  title: string;
-  content: string;
   _id?: string;
+  chapterNumber: number;
+  content: string;
+  createdAt: Date;
+  creatorId: string;
+  isFree: boolean;
+  isPublished: boolean;
+  title: string;
+  updatedAt: Date;
+  courseId: string;
 }
+
 
 const CourseDetailsPage = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -38,6 +46,8 @@ const CourseDetailsPage = () => {
     creatorCourses: courses,
   } = useSelector((state: RootState) => state.mentor);
   const { user } = useSelector((state: RootState) => state.auth);
+
+
 
   const isCreator = useMemo(() => {
     return (
@@ -87,10 +97,13 @@ const CourseDetailsPage = () => {
 
   useEffect(() => {
     if (Array.isArray(initialChapters)) {
-      const formattedChapters: Chapter[] = initialChapters.map((chapter) => ({
+      //@ts-ignore
+      const formattedChapters: Chapter[] = initialChapters.map((chapter : Chapter) => ({
         title: chapter?.title || "",
         content: chapter?.content || "",
         _id: chapter?._id,
+        isFree : chapter?.isFree as boolean,
+        isPublished : chapter.isPublished as boolean
       }));
       setChapters(formattedChapters);
     }

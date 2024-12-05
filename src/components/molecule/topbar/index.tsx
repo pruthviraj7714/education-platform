@@ -72,15 +72,7 @@ const TopBar: React.FC<TopBarProps> = () => {
       {authToken && (
         <div className="flex items-center gap-4">
           <div>
-            {isCreator ? (
-              <Button
-                onClick={() => {
-                  navigate("/dashboard");
-                }}
-              >
-                My Courses
-              </Button>
-            ) : (
+            {!isCreator && (
               <Button onClick={() => navigate("/learner/courses")}>
                 My Courses
               </Button>

@@ -8,12 +8,15 @@ import {
   searchCourses,
   fetchTagsAndCategories,
 } from "../../../redux/slices/mentorSlice";
-import { AppDispatch } from "../../../redux/store";
+import { AppDispatch, RootState } from "../../../redux/store";
 import Loader from "../../../components/molecule/loader/Loder";
 import { AiOutlineMenu, AiOutlineClose } from "react-icons/ai";
 import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 import { Modal } from "antd";
-import { enrollCourse } from "../../../redux/slices/enrollSlice";
+import {
+  enrollCourse,
+  fetchEnrolledCourses,
+} from "../../../redux/slices/enrollSlice";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 
@@ -47,8 +50,16 @@ function Index() {
   }>({});
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
   const authToken = sessionStorage.getItem("authToken");
+  const {
+    enrolledCourses,
+  } = useSelector((state: RootState) => state.enroll);
 
   const navigate = useNavigate();
+  useEffect(() => {
+    if (authToken) {
+      dispatch(fetchEnrolledCourses(authToken));
+    }
+  }, [authToken]);
 
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
@@ -103,7 +114,7 @@ function Index() {
     );
     if (response.meta.requestStatus === "fulfilled") {
       toast.success("Course enrollment successful!");
-      navigate(`/learner/course-page/${courseId}`)
+      navigate(`/learner/course-page/${courseId}`);
     } else {
       toast.error("Failed to enroll into the course");
     }
@@ -213,8 +224,16 @@ function Index() {
                       description={course?.description}
                       courseId={course?._id}
                       onClick={() => {
-                        setIsEnrollModalOpen(true),
-                          setSelectedCourseId(course?._id);
+                        const isEnrolled = enrolledCourses.some((course) => {
+                          return course._id === course?._id;
+                        });
+                      
+                        if (isEnrolled) {
+                          navigate(`/learner/course-page/${course._id}`);
+                        } else {
+                          setIsEnrollModalOpen(true),
+                            setSelectedCourseId(course?._id);
+                        }
                       }}
                     />
                   ))

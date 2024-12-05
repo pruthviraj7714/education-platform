@@ -145,19 +145,22 @@ function CourseDetails({ chapter, onSave, totalChapters }: CourseDetailsProps) {
         };
 
         try {
-            await dispatch(
-                createChapter({
-                    chapterData: {
-                        ...chapterData,
-                    },
-                    courseId,
-                    headers: {
-                        Authorization: `Bearer ${authToken}`,
-                    },
-                })
-            );
-            console.log('Chapter created successfully');
-            onSave(chapterData);
+            if(onSave) {
+                onSave(chapterData);
+            }else {
+                await dispatch(
+                    createChapter({
+                        chapterData: {
+                            ...chapterData,
+                        },
+                        courseId,
+                        headers: {
+                            Authorization: `Bearer ${authToken}`,
+                        },
+                    })
+                );
+                console.log('Chapter created successfully');
+            }
         } catch (error) {
             console.error('Failed to create chapter', error);
         }

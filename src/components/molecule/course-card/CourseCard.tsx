@@ -40,9 +40,9 @@ const CourseCard: React.FC<CourseCardProps> = ({
   onClick,
 }) => {
   const location = useLocation();
-  const isLearnerDashboard = location.pathname === "/learner/dashboard" || "/learner/courses";
   const [isTruncated, setIsTruncated] = useState(true);
   const maxDescriptionLength = 40;
+  const isCreatorDashboard = location.pathname === "/dashboard"
 
   const toggleDescription = () => {
     setIsTruncated(!isTruncated);
@@ -98,7 +98,7 @@ const CourseCard: React.FC<CourseCardProps> = ({
         </div>
       </div>
 
-      {!isLearnerDashboard && (
+      {isCreatorDashboard && (
         <div className="flex items-center justify-between mt-4">
           <div className="flex items-center gap-1.5">
             <Switch

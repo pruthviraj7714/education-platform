@@ -10,11 +10,19 @@ import {
   deleteChapter,
 } from "../../../redux/slices/mentorSlice";
 import { AppDispatch } from "../../../redux/store";
+import { Switch } from "antd";
 
 interface Chapter {
   _id?: string;
-  title: string;
+  chapterNumber: number;
   content: string;
+  createdAt: Date;
+  creatorId: string;
+  isFree: boolean;
+  isPublished: boolean;
+  title: string;
+  updatedAt: Date;
+  courseId: string;
 }
 
 interface ChapterListProps {
@@ -30,6 +38,8 @@ const ChapterList: React.FC<ChapterListProps> = ({ chapters, setChapters }) => {
   const navigate = useNavigate();
   const { courseId } = useParams<{ courseId: string }>();
   const dispatch = useDispatch<AppDispatch>();
+  console.log(chapters);
+
 
   const addChapter = () => {
     setIsAddingChapter(true);
@@ -64,6 +74,7 @@ const ChapterList: React.FC<ChapterListProps> = ({ chapters, setChapters }) => {
           })
         ).unwrap();
 
+        //@ts-ignore
         setChapters((prev) => [...prev, addedChapter]);
       } else if (editingChapterIndex !== null && courseId) {
         const chapterToUpdate = chapters[editingChapterIndex];
@@ -82,6 +93,7 @@ const ChapterList: React.FC<ChapterListProps> = ({ chapters, setChapters }) => {
           })
         ).unwrap();
 
+        //@ts-ignore
         setChapters((prev) =>
           prev.map((chapter, index) =>
             index === editingChapterIndex ? updatedChapter : chapter
@@ -114,6 +126,67 @@ const ChapterList: React.FC<ChapterListProps> = ({ chapters, setChapters }) => {
     }
   };
 
+  const handleTogglePublishStatus = async (chapterIndex: number) => {
+    const authToken = sessionStorage.getItem("authToken");
+  
+    if (!authToken) {
+      console.error("Authentication token missing!");
+      return;
+    }
+  
+    const updatedChapters = [...chapters];
+    const chapterToUpdate = { ...updatedChapters[chapterIndex] };
+    chapterToUpdate.isPublished = !chapterToUpdate.isPublished;
+  
+    try {
+      const updatedChapter = await dispatch(
+        updateChapter({
+          chapterId: chapterToUpdate._id || "",
+          chapterData: chapterToUpdate,
+          courseId: courseId as string,
+          headers: { Authorization: `Bearer ${authToken}` },
+        })
+      ).unwrap();
+      
+        //@ts-ignore
+      updatedChapters[chapterIndex] = updatedChapter;
+      setChapters(updatedChapters);
+    } catch (error) {
+      console.error("Failed to update publish status:", error);
+    }
+  };
+  
+  const handleTogglePriceStatus = async (chapterIndex: number) => {
+    const authToken = sessionStorage.getItem("authToken");
+  
+    if (!authToken) {
+      console.error("Authentication token missing!");
+      return;
+    }
+  
+    const updatedChapters = [...chapters];
+    const chapterToUpdate = { ...updatedChapters[chapterIndex] };
+    chapterToUpdate.isFree = !chapterToUpdate.isFree;
+  
+    try {
+      const updatedChapter = await dispatch(
+        updateChapter({
+          chapterId: chapterToUpdate._id || "",
+          chapterData: chapterToUpdate,
+          courseId: courseId as string,
+          headers: { Authorization: `Bearer ${authToken}` },
+        })
+      ).unwrap();
+      
+        //@ts-ignore
+      updatedChapters[chapterIndex] = updatedChapter;
+      setChapters(updatedChapters);
+    } catch (error) {
+      console.error("Failed to update price status:", error);
+    }
+  };
+  
+
   const handleViewChapter = (courseId: string, chapterId: string) => {
     navigate(`/chapters/${courseId}/${chapterId}`);
   };
@@ -128,6 +201,7 @@ const ChapterList: React.FC<ChapterListProps> = ({ chapters, setChapters }) => {
                 ? { title: "", content: "" }
                 : chapters[editingChapterIndex!]
             }
+        //@ts-ignore
             onSave={handleSaveChapter}
             totalChapters={chapters.length}
           />
@@ -164,6 +238,20 @@ const ChapterList: React.FC<ChapterListProps> = ({ chapters, setChapters }) => {
                     <Button onClick={() => editChapter(index)}>
                       <GoPencil />
                     </Button>
+
+                    <Switch
+                      checked={chapters[index]?.isPublished}
+                      onChange={() => handleTogglePublishStatus(index)}
+                      checkedChildren="Published"
+                      unCheckedChildren="Unpublished"
+                    />
+                    <Switch
+                      checked={chapters[index].isFree}
+                      onChange={() => handleTogglePriceStatus(index)}
+                      checkedChildren="Free"
+                      unCheckedChildren="paid"
+                    />
+
                     <Button
                       onClick={() => handleDeleteChapter(chapter._id || "")}
                     >
