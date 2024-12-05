@@ -3,7 +3,7 @@ import { useLocation } from "react-router-dom";
 import chapter from "../../../assets/chapter.svg";
 import student from "../../../assets/student.svg";
 import { FaTrash } from "react-icons/fa";
-import { Switch } from "antd";
+import { Modal, Switch } from "antd";
 
 interface CourseCardProps {
   title: string;
@@ -41,8 +41,9 @@ const CourseCard: React.FC<CourseCardProps> = ({
 }) => {
   const location = useLocation();
   const [isTruncated, setIsTruncated] = useState(true);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const maxDescriptionLength = 40;
-  const isCreatorDashboard = location.pathname === "/dashboard"
+  const isCreatorDashboard = location.pathname === "/dashboard";
 
   const toggleDescription = () => {
     setIsTruncated(!isTruncated);
@@ -116,10 +117,25 @@ const CourseCard: React.FC<CourseCardProps> = ({
           </div>
           <div className="flex items-center space-x-4">
             <FaTrash
-              onClick={() => onDelete && onDelete(courseId)}
+              onClick={() => setDeleteDialogOpen(true)}
               className="cursor-pointer text-red-500"
             />
           </div>
+          {deleteDialogOpen && (
+            <Modal
+              title="Confirm Course Deletion"
+              visible={deleteDialogOpen}
+              onOk={() => onDelete && onDelete(courseId)}
+              onCancel={() => setDeleteDialogOpen(false)}
+              okText="Yes, Delete"
+              cancelText="No, Cancel"
+            >
+              <p>
+                Are you sure you want to delete this course? This action cannot
+                be undone.
+              </p>
+            </Modal>
+          )}
         </div>
       )}
     </div>
