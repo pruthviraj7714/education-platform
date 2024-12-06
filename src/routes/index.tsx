@@ -4,6 +4,8 @@ import TopBar from "../components/molecule/topbar";
 import DashboardLayout from "../pages/layouts/DashboardLayout";
 import Loader from "../components/molecule/loader/Loder";
 import PrivateRoute from "../components/molecule/private-routes/PrivateRoutes";
+import TermsPage from "../pages/terms/TermsPage";
+import PrivacyPage from "../pages/privacy/PrivacyPage";
 
 const Login = React.lazy(() => import("../pages/auth/login"));
 const Signup = React.lazy(() => import("../pages/auth/signup"));
@@ -42,6 +44,8 @@ const Router: React.FC = () => {
                   <Route path="/verify-otp" element={<VerifyOTP />} />
                   <Route path="/signup" element={<Signup />} />
                   <Route path="/roles" element={<RoleSelection />} />
+                  <Route path="/terms" element={<TermsPage />} />
+                  <Route path="/privacy" element={<PrivacyPage />} />
                   {/* Wrap protected routes in PrivateRoute */}
                   <Route
                     path="/create-course"

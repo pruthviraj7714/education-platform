@@ -389,9 +389,13 @@ export default function CoursePage() {
                     : "hover:bg-white hover:bg-opacity-10"
                 }`}
                 onClick={() => {
-                  item.type === "QUIZ" && index > currentQuizIndex && setCurrentQuizIndex(prev => prev + 1);
-                  item.type === "QUIZ" && index < currentQuizIndex && setCurrentQuizIndex(prev => prev - 1); 
-                  setCurrentContentIndex(index)
+                  item.type === "QUIZ" &&
+                    index > currentQuizIndex &&
+                    setCurrentQuizIndex((prev) => prev + 1);
+                  item.type === "QUIZ" &&
+                    index < currentQuizIndex &&
+                    setCurrentQuizIndex((prev) => prev - 1);
+                  setCurrentContentIndex(index);
                 }}
               >
                 {item.type === "CHAPTER" ? (
@@ -463,6 +467,12 @@ export default function CoursePage() {
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-gray-100">
+          <span className="!text-red-400 !text-sm mb-3">
+            This content is copyrighted and sharing the content is illegal and a
+            punishable offence. Any violation is a punishable offense and would
+            result in a complaint with the Cyber Security Cell. These show up in
+            Background Checks.
+          </span>
           {renderContent()}
         </main>
       </div>
