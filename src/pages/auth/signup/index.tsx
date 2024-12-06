@@ -4,7 +4,7 @@ import Button from "../../../components/atoms/button";
 import { MdArrowOutward } from "react-icons/md";
 import { useDispatch, useSelector } from "react-redux";
 import { registerUser, resetAuthState } from "../../../redux/slices/authSlice";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { AppDispatch } from "../../../redux/store";
 
