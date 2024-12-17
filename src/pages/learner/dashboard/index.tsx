@@ -35,7 +35,11 @@ function Index() {
     quizIds: string[];
   }
 
-  const { courses, loading, error } = useSelector((state: any) => state.mentor);
+  const {
+    courses: { courses, totalPages: total },
+    loading,
+    error,
+  } = useSelector((state: any) => state.mentor);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [categories, setCategories] = useState<{ [key: string]: string[] }>({});
@@ -50,9 +54,8 @@ function Index() {
   }>({});
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
   const authToken = sessionStorage.getItem("authToken");
-  const {
-    enrolledCourses,
-  } = useSelector((state: RootState) => state.enroll);
+  const { enrolledCourses } = useSelector((state: RootState) => state.enroll);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const navigate = useNavigate();
   useEffect(() => {
@@ -84,7 +87,7 @@ function Index() {
   };
 
   useEffect(() => {
-    dispatch(fetchCourses());
+    dispatch(fetchCourses({ currentPage: currentPage }));
     dispatch(fetchTagsAndCategories()).then((response) => {
       if (response.payload && typeof response.payload === "object") {
         setCategories(
@@ -92,7 +95,7 @@ function Index() {
         );
       }
     });
-  }, [dispatch]);
+  }, [dispatch, currentPage]);
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -201,7 +204,7 @@ function Index() {
                 <p className="text-red-500">{error}</p>
               ) : (
                 courses
-                  .filter(
+                  ?.filter(
                     (course: Course) =>
                       (selectedTags.length > 0
                         ? course.tags.some((tag) => selectedTags.includes(tag))
@@ -227,7 +230,7 @@ function Index() {
                         const isEnrolled = enrolledCourses.some((course) => {
                           return course._id === course?._id;
                         });
-                      
+
                         if (isEnrolled) {
                           navigate(`/learner/course-page/${course._id}`);
                         } else {
@@ -238,6 +241,7 @@ function Index() {
                     />
                   ))
               )}
+
               {isEnrollModalOpen && (
                 <Modal
                   title="Confirm Enrollment"
@@ -256,6 +260,37 @@ function Index() {
             </div>
           </form>
         </FormProvider>
+        <div className="flex justify-center items-center ">
+          <div className="flex items-center justify-center space-x-2 mt-4">
+            <button
+              onClick={() => setCurrentPage(currentPage - 1)}
+              disabled={currentPage === 1}
+              className={`px-4 py-2 border rounded ${currentPage === 1 ? "opacity-50 cursor-not-allowed" : ""}`}
+            >
+              Previous
+            </button>
+
+            {Array.from({ length: total }, (_, index) => index + 1).map(
+              (page) => (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`px-4 py-2 border rounded ${page === currentPage ? "bg-blue-500 text-white" : ""}`}
+                >
+                  {page}
+                </button>
+              )
+            )}
+
+            <button
+              onClick={() => setCurrentPage(currentPage + 1)}
+              disabled={currentPage === total}
+              className={`px-4 py-2 border rounded ${currentPage === total ? "opacity-50 cursor-not-allowed" : ""}`}
+            >
+              Next
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

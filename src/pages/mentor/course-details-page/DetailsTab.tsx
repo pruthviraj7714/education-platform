@@ -3,7 +3,7 @@ import Input from "../../../components/molecule/input/Input";
 import Button from "../../../components/atoms/button";
 import { useEffect, useState } from "react";
 import {
-  fetchCoursesByCreator,
+  fetchCourseById,
   updateCourse,
 } from "../../../redux/slices/mentorSlice";
 import { toast } from "react-toastify";
@@ -29,11 +29,9 @@ const CATEGORY_OPTIONS = [
 export default function DetailsTab({
   course,
   authToken,
-  creatorId,
 }: {
   course: any;
   authToken: string;
-  creatorId: string;
 }) {
   const methods = useForm<CourseFormData>();
   const [tags, setTags] = useState<string[]>([]);
@@ -41,7 +39,7 @@ export default function DetailsTab({
   const dispatch = useDispatch<AppDispatch>();
   const [removeTags, setRemoveTags] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const { creatorCourses: courses } = useSelector(
+  const {  } = useSelector(
     (state: RootState) => state.mentor
   );
 
@@ -109,14 +107,9 @@ export default function DetailsTab({
       ).unwrap();
       toast.success("Course updated successfully!");
 
-      await dispatch(
-        fetchCoursesByCreator({
-          creatorId,
-          authToken,
-        })
-      );
+      await dispatch(fetchCourseById({courseId : course._id})).then(response => console.log(response));
       //@ts-ignore
-      let updatedCourse = courses.find((c) => c._id === course._id);
+      let updatedCourse = courses?.find((c) => c._id === course._id);
 
       if (!updatedCourse) {
         toast.error("Error while fetching the course content");

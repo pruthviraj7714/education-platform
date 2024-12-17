@@ -1,4 +1,4 @@
-import { useEffect, startTransition } from "react";
+import { useEffect, startTransition, useState } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { GoPlus } from "react-icons/go";
 import Button from "../../../components/atoms/button";
@@ -19,6 +19,7 @@ function Index() {
   const navigate = useNavigate();
   const authToken = sessionStorage.getItem("authToken") || "";
   const creatorId = sessionStorage.getItem("userId") || "";
+  const [currentPage, setCurrentPage] = useState(1);
 
   interface Course {
     imageUrl: string;
@@ -34,7 +35,7 @@ function Index() {
   }
 
   const {
-    creatorCourses = [],
+    creatorCourses: { courses : creatorCourses, totalPages: total },
     loading,
     error,
   } = useSelector((state: any) => state.mentor);
@@ -46,7 +47,11 @@ function Index() {
           courseId,
           headers: { Authorization: `Bearer ${authToken}` },
         })
-      ).then(() => dispatch(fetchCoursesByCreator({ creatorId, authToken })));
+      ).then(() =>
+        dispatch(
+          fetchCoursesByCreator({ creatorId, authToken, currentPage })
+        )
+      );
     });
   };
 
@@ -58,7 +63,11 @@ function Index() {
           courseData: updatedData,
           headers: { Authorization: `Bearer ${authToken}` },
         })
-      ).then(() => dispatch(fetchCoursesByCreator({ creatorId, authToken })));
+      ).then(() =>
+        dispatch(
+          fetchCoursesByCreator({ creatorId, authToken, currentPage })
+        )
+      );
     });
   };
 
@@ -81,7 +90,9 @@ function Index() {
   useEffect(() => {
     if (creatorId && authToken) {
       startTransition(() => {
-        dispatch(fetchCoursesByCreator({ creatorId, authToken }));
+        dispatch(
+          fetchCoursesByCreator({ creatorId, authToken, currentPage })
+        );
       });
     }
   }, [creatorId, authToken]);
@@ -112,8 +123,8 @@ function Index() {
               <Loader />
             ) : error ? (
               <p className="text-red-500">{error}</p>
-            ) : creatorCourses.length > 0 ? (
-              creatorCourses.map((course: Course) => (
+            ) : creatorCourses?.length > 0 ? (
+              creatorCourses?.map((course: Course) => (
                 <CourseCard
                   key={course?._id}
                   title={course?.title}
@@ -143,6 +154,37 @@ function Index() {
           </div>
         </form>
       </FormProvider>
+      <div className="flex justify-center items-center mt-5 ">
+        <div className="flex items-center justify-center space-x-2 mt-4">
+          <button
+            onClick={() => setCurrentPage(currentPage - 1)}
+            disabled={currentPage === 1}
+            className={`px-4 py-2 border rounded ${currentPage === 1 ? "opacity-50 cursor-not-allowed" : ""}`}
+          >
+            Previous
+          </button>
+
+          {Array.from({ length: total }, (_, index) => index + 1).map(
+            (page) => (
+              <button
+                key={page}
+                onClick={() => setCurrentPage(page)}
+                className={`px-4 py-2 border rounded ${page === currentPage ? "bg-blue-500 text-white" : ""}`}
+              >
+                {page}
+              </button>
+            )
+          )}
+
+          <button
+            onClick={() => setCurrentPage(currentPage + 1)}
+            disabled={currentPage === total}
+            className={`px-4 py-2 border rounded ${currentPage === total ? "opacity-50 cursor-not-allowed" : ""}`}
+          >
+            Next
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

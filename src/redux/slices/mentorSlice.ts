@@ -1,5 +1,5 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import axios from 'axios';
+import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
+import axios from "axios";
 
 const mentorApiUrl = import.meta.env.VITE_MENTOR_API_URL;
 
@@ -26,6 +26,7 @@ interface Tag {
 interface MentorState {
   chapterData: any;
   courses: Course[];
+  course : Course | null;
   loading: boolean;
   error: string | null;
   creatorCourses: Course[];
@@ -37,6 +38,7 @@ const initialState: MentorState = {
   courses: [],
   loading: false,
   error: null,
+  course : null,
   creatorCourses: [],
   chapters: [],
   chapterData: {
@@ -52,7 +54,7 @@ export const createCourse = createAsyncThunk<
   { courseData: Course; headers: { Authorization: string } },
   { rejectValue: string }
 >(
-  'mentor/createCourse',
+  "mentor/createCourse",
   async ({ courseData, headers }, { rejectWithValue }) => {
     try {
       const response = await axios.post(`${mentorApiUrl}/course`, courseData, {
@@ -61,7 +63,7 @@ export const createCourse = createAsyncThunk<
       return response.data;
     } catch (error: any) {
       return rejectWithValue(
-        error.response?.data?.message || 'Something went wrong'
+        error.response?.data?.message || "Something went wrong"
       );
     }
   }
@@ -75,7 +77,7 @@ export const createChapter = createAsyncThunk<
   },
   { rejectValue: string }
 >(
-  'mentor/createChapter',
+  "mentor/createChapter",
   async ({ chapterData, courseId, headers }, { rejectWithValue }) => {
     try {
       const response = await axios.post(
@@ -86,7 +88,7 @@ export const createChapter = createAsyncThunk<
       return response.data;
     } catch (error: any) {
       return rejectWithValue(
-        error.response?.data?.message || 'Failed to create chapter'
+        error.response?.data?.message || "Failed to create chapter"
       );
     }
   }
@@ -97,7 +99,7 @@ export const getCourseChapter = createAsyncThunk<
   { courseId: string; authToken: string },
   { rejectValue: string }
 >(
-  'mentor/getCourseChapter',
+  "mentor/getCourseChapter",
   async ({ courseId, authToken }, { rejectWithValue }) => {
     try {
       const response = await axios.get(`${mentorApiUrl}/chapter/${courseId}`, {
@@ -106,7 +108,7 @@ export const getCourseChapter = createAsyncThunk<
       return response.data.chapters || [];
     } catch (error: any) {
       return rejectWithValue(
-        error.response?.data?.message || 'Failed to fetch course chapters'
+        error.response?.data?.message || "Failed to fetch course chapters"
       );
     }
   }
@@ -122,7 +124,7 @@ export const updateChapter = createAsyncThunk<
   },
   { rejectValue: string }
 >(
-  'mentor/updateChapter',
+  "mentor/updateChapter",
   async (
     { chapterId, chapterData, courseId, headers },
     { rejectWithValue }
@@ -138,7 +140,7 @@ export const updateChapter = createAsyncThunk<
       return response.data;
     } catch (error: any) {
       return rejectWithValue(
-        error.response?.data?.message || 'Failed to update chapter'
+        error.response?.data?.message || "Failed to update chapter"
       );
     }
   }
@@ -149,7 +151,7 @@ export const getChapter = createAsyncThunk<
   { courseId: string; chapterId: string; authToken: string },
   { rejectValue: string }
 >(
-  'mentor/getChapter',
+  "mentor/getChapter",
   async ({ courseId, chapterId, authToken }, { rejectWithValue }) => {
     try {
       const response = await axios.get(
@@ -160,9 +162,9 @@ export const getChapter = createAsyncThunk<
       );
       return response.data;
     } catch (error: any) {
-      console.error('Error fetching chapter:', error);
+      console.error("Error fetching chapter:", error);
       return rejectWithValue(
-        error.response?.data?.message || 'Failed to fetch chapter details'
+        error.response?.data?.message || "Failed to fetch chapter details"
       );
     }
   }
@@ -173,7 +175,7 @@ export const updateCourse = createAsyncThunk<
   { courseId: string; courseData: Course; headers: { Authorization: string } },
   { rejectValue: string }
 >(
-  'mentor/updateCourse',
+  "mentor/updateCourse",
   async ({ courseId, courseData, headers }, { rejectWithValue }) => {
     try {
       const response = await axios.put(
@@ -184,7 +186,7 @@ export const updateCourse = createAsyncThunk<
       return response.data;
     } catch (error: any) {
       return rejectWithValue(
-        error.response?.data?.message || 'Failed to update the course'
+        error.response?.data?.message || "Failed to update the course"
       );
     }
   }
@@ -199,7 +201,7 @@ export const deleteChapter = createAsyncThunk<
   },
   { rejectValue: string }
 >(
-  'mentor/deleteChapter',
+  "mentor/deleteChapter",
   async ({ chapterId, courseId, headers }, { rejectWithValue }) => {
     try {
       await axios.delete(`${mentorApiUrl}/chapter/${courseId}/${chapterId}`, {
@@ -208,7 +210,7 @@ export const deleteChapter = createAsyncThunk<
       return { chapterId };
     } catch (error: any) {
       return rejectWithValue(
-        error.response?.data?.message || 'Failed to delete chapter'
+        error.response?.data?.message || "Failed to delete chapter"
       );
     }
   }
@@ -218,7 +220,7 @@ export const deleteCourse = createAsyncThunk<
   string,
   { courseId: string; headers: { Authorization: string } },
   { rejectValue: string }
->('mentor/deleteCourse', async ({ courseId, headers }, { rejectWithValue }) => {
+>("mentor/deleteCourse", async ({ courseId, headers }, { rejectWithValue }) => {
   try {
     const response = await axios.delete(`${mentorApiUrl}/course/${courseId}`, {
       headers,
@@ -226,44 +228,46 @@ export const deleteCourse = createAsyncThunk<
     return response.data.message;
   } catch (error: any) {
     return rejectWithValue(
-      error.response?.data?.message || 'Failed to delete the course'
+      error.response?.data?.message || "Failed to delete the course"
     );
   }
 });
 
 export const fetchCourses = createAsyncThunk<
   Course[],
-  void,
+  { currentPage: number },
   { rejectValue: string }
->('mentor/fetchCourses', async (_, { rejectWithValue }) => {
+>("mentor/fetchCourses", async ({ currentPage }, { rejectWithValue }) => {
   try {
-    const response = await axios.get(`${mentorApiUrl}/course/search`);
-    return response?.data?.courses || [];
+    const response = await axios.get(
+      `${mentorApiUrl}/course/search?page=${currentPage}`
+    );
+    return response.data;
   } catch (error: any) {
     return rejectWithValue(
-      error.response?.data?.message || 'Failed to fetch courses'
+      error.response?.data?.message || "Failed to fetch courses"
     );
   }
 });
 
 export const fetchCoursesByCreator = createAsyncThunk<
   Course[],
-  { creatorId: string; authToken: string },
+  { creatorId: string; authToken: string; currentPage: number },
   { rejectValue: string }
 >(
-  'mentor/fetchCoursesByCreator',
-  async ({ creatorId, authToken }, { rejectWithValue }) => {
+  "mentor/fetchCoursesByCreator",
+  async ({ creatorId, authToken, currentPage }, { rejectWithValue }) => {
     try {
       const response = await axios.get(
-        `${mentorApiUrl}/course/fetchCourses/${creatorId}`,
+        `${mentorApiUrl}/course/fetchCourses/${creatorId}?page=${currentPage}`,
         {
           headers: { Authorization: `Bearer ${authToken}` },
         }
       );
-      return response.data.courses || [];
+      return response.data;
     } catch (error: any) {
       return rejectWithValue(
-        error.response?.data?.message || 'Failed to fetch courses by creator'
+        error.response?.data?.message || "Failed to fetch courses by creator"
       );
     }
   }
@@ -273,7 +277,7 @@ export const searchCourses = createAsyncThunk<
   Course[],
   { keyword: string; tags: string },
   { rejectValue: string }
->('mentor/searchCourses', async ({ keyword, tags }, { rejectWithValue }) => {
+>("mentor/searchCourses", async ({ keyword, tags }, { rejectWithValue }) => {
   try {
     const response = await axios.get(`${mentorApiUrl}/course/search`, {
       params: { keyword, tags },
@@ -281,7 +285,26 @@ export const searchCourses = createAsyncThunk<
     return response?.data?.courses || [];
   } catch (error: any) {
     return rejectWithValue(
-      error.response?.data?.message || 'Failed to search courses'
+      error.response?.data?.message || "Failed to search courses"
+    );
+  }
+});
+
+export const fetchCourseById = createAsyncThunk<
+  Course[],
+  { courseId: string },
+  { rejectValue: string }
+>("mentor/searchCourses", async ({ courseId }, { rejectWithValue }) => {
+  try {
+    const response = await axios.get(
+      `${mentorApiUrl}/course/search/${courseId}`,
+      {}
+    );
+
+    return response.data;
+  } catch (error: any) {
+    return rejectWithValue(
+      error.response?.data?.message || "Failed to fetch courses"
     );
   }
 });
@@ -290,19 +313,19 @@ export const fetchTagsAndCategories = createAsyncThunk<
   Tag[],
   void,
   { rejectValue: string }
->('mentor/fetchTagsAndCategories', async (_, { rejectWithValue }) => {
+>("mentor/fetchTagsAndCategories", async (_, { rejectWithValue }) => {
   try {
     const response = await axios.get(`${mentorApiUrl}/course/categoryAndTags`);
     return response.data;
   } catch (error: any) {
     return rejectWithValue(
-      error.response?.data?.message || 'Failed to fetch tags'
+      error.response?.data?.message || "Failed to fetch tags"
     );
   }
 });
 
 const mentorSlice = createSlice({
-  name: 'mentor',
+  name: "mentor",
   initialState,
   reducers: {},
   extraReducers: (builder) => {
@@ -323,7 +346,7 @@ const mentorSlice = createSlice({
         createCourse.rejected,
         (state, action: PayloadAction<string | undefined>) => {
           state.loading = false;
-          state.error = action.payload || 'Failed to create the course';
+          state.error = action.payload || "Failed to create the course";
         }
       );
 
@@ -337,16 +360,14 @@ const mentorSlice = createSlice({
         updateCourse.fulfilled,
         (state, action: PayloadAction<Course>) => {
           state.loading = false;
-          state.courses = state.courses.map((course) =>
-            course.title === action.payload.title ? action.payload : course
-          );
+          state.course = action.payload 
         }
       )
       .addCase(
         updateCourse.rejected,
         (state, action: PayloadAction<string | undefined>) => {
           state.loading = false;
-          state.error = action.payload || 'Failed to update the course';
+          state.error = action.payload || "Failed to update the course";
         }
       );
 
@@ -367,7 +388,7 @@ const mentorSlice = createSlice({
         fetchCourses.rejected,
         (state, action: PayloadAction<string | undefined>) => {
           state.loading = false;
-          state.error = action.payload || 'Failed to fetch courses';
+          state.error = action.payload || "Failed to fetch courses";
         }
       );
 
@@ -388,7 +409,7 @@ const mentorSlice = createSlice({
         fetchCoursesByCreator.rejected,
         (state, action: PayloadAction<string | undefined>) => {
           state.loading = false;
-          state.error = action.payload || 'Failed to fetch courses by creator';
+          state.error = action.payload || "Failed to fetch courses by creator";
         }
       );
 
@@ -411,7 +432,7 @@ const mentorSlice = createSlice({
         deleteCourse.rejected,
         (state, action: PayloadAction<string | undefined>) => {
           state.loading = false;
-          state.error = action.payload || 'Failed to delete the course';
+          state.error = action.payload || "Failed to delete the course";
         }
       );
     builder
@@ -430,9 +451,29 @@ const mentorSlice = createSlice({
         searchCourses.rejected,
         (state, action: PayloadAction<string | undefined>) => {
           state.loading = false;
-          state.error = action.payload || 'Failed to search courses';
+          state.error = action.payload || "Failed to search courses";
         }
       );
+
+    // builder
+    //   .addCase(fetchCourseById.pending, (state) => {
+    //     state.loading = true;
+    //     state.error = null;
+    //   })
+    //   .addCase(
+    //     fetchCourseById.fulfilled,
+    //     (state, action: PayloadAction<Course[]>) => {
+    //       state.loading = false;
+    //       state.courses = action.payload;
+    //     }
+    //   )
+    //   .addCase(
+    //     fetchCourseById.rejected,
+    //     (state, action: PayloadAction<string | undefined>) => {
+    //       state.loading = false;
+    //       state.error = action.payload || "Failed to search courses";
+    //     }
+    //   );
 
     builder
       .addCase(createChapter.pending, (state) => {
@@ -450,7 +491,7 @@ const mentorSlice = createSlice({
         createChapter.rejected,
         (state, action: PayloadAction<string | undefined>) => {
           state.loading = false;
-          state.error = action.payload || 'Failed to create chapter';
+          state.error = action.payload || "Failed to create chapter";
         }
       );
     builder
@@ -469,7 +510,7 @@ const mentorSlice = createSlice({
         getCourseChapter.rejected,
         (state, action: PayloadAction<string | undefined>) => {
           state.loading = false;
-          state.error = action.payload || 'Failed to fetch course chapters';
+          state.error = action.payload || "Failed to fetch course chapters";
         }
       );
 
@@ -494,7 +535,7 @@ const mentorSlice = createSlice({
         updateChapter.rejected,
         (state, action: PayloadAction<string | undefined>) => {
           state.loading = false;
-          state.error = action.payload || 'Failed to update chapter';
+          state.error = action.payload || "Failed to update chapter";
         }
       );
 
@@ -508,8 +549,8 @@ const mentorSlice = createSlice({
         (state, action: PayloadAction<Chapter>) => {
           state.chapterData.loading = false;
           if (!action.payload) {
-            console.error('Received invalid chapter payload:', action.payload);
-            state.chapterData.error = 'Invalid chapter data';
+            console.error("Received invalid chapter payload:", action.payload);
+            state.chapterData.error = "Invalid chapter data";
             return;
           }
           state.chapterData.chapter = action.payload;
@@ -521,8 +562,8 @@ const mentorSlice = createSlice({
         (state, action: PayloadAction<string | undefined>) => {
           state.chapterData.loading = false;
           state.chapterData.error =
-            action.payload || 'Failed to fetch chapter details';
-          console.error('Fetch chapter failed with error:', action.payload);
+            action.payload || "Failed to fetch chapter details";
+          console.error("Fetch chapter failed with error:", action.payload);
         }
       );
     builder
@@ -544,7 +585,7 @@ const mentorSlice = createSlice({
         deleteChapter.rejected,
         (state, action: PayloadAction<string | undefined>) => {
           state.loading = false;
-          state.error = action.payload || 'Failed to delete chapter';
+          state.error = action.payload || "Failed to delete chapter";
         }
       )
 
@@ -562,7 +603,7 @@ const mentorSlice = createSlice({
         fetchTagsAndCategories.rejected,
         (state, action: PayloadAction<string | undefined>) => {
           state.loading = false;
-          state.error = action.payload || 'Error fetching tags';
+          state.error = action.payload || "Error fetching tags";
         }
       );
   },

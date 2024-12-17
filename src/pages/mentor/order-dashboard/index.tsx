@@ -1,21 +1,18 @@
 import { useEffect, useState } from "react";
 import { FiArrowRight } from "react-icons/fi";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { toast } from "react-toastify";
 import Button from "../../../components/atoms/button";
-import {
-  fetchCoursesByCreator,
-  updateCourse,
-} from "../../../redux/slices/mentorSlice";
+import { updateCourse } from "../../../redux/slices/mentorSlice";
 import { RxDragHandleDots2 } from "react-icons/rx";
-import { AppDispatch, RootState } from "src/redux/store";
+import { AppDispatch } from "src/redux/store";
 
 interface ContentOrderProps {
   courseId: string;
   chapters: any[];
   quizes: any[];
   prevOrder: string[];
-  creatorId: string;
+  onUpdateContentList?: (newOrder: string[]) => void;
 }
 
 export default function ContentList({
@@ -23,7 +20,7 @@ export default function ContentList({
   chapters,
   quizes,
   prevOrder,
-  creatorId,
+  onUpdateContentList,
 }: ContentOrderProps) {
   const dispatch = useDispatch<AppDispatch>();
   const [contentItems, setContentItems] = useState<any[]>([]);
@@ -32,10 +29,6 @@ export default function ContentList({
   const [isLoading, setIsLoading] = useState(false);
   const authToken = sessionStorage.getItem("authToken");
 
-  const { creatorCourses: courses } = useSelector(
-    (state: RootState) => state.mentor
-  );
-
   const updateLocalContentItems = (items: any[]) => {
     const allItems = [
       ...(chapters.map((c) => ({ ...c, type: "chapter" })) ?? []),
@@ -43,7 +36,7 @@ export default function ContentList({
     ];
 
     const orderedItems = items
-      .map((id) => allItems.find((item) => item._id === id))
+      ?.map((id) => allItems.find((item) => item._id === id))
       .filter(Boolean);
 
     const remainingItems = allItems.filter((item) => !items.includes(item._id));
@@ -103,7 +96,7 @@ export default function ContentList({
     try {
       const contentOrder = contentItems.map((item) => item._id.toString());
 
-      await dispatch(
+      const response = await dispatch(
         updateCourse({
           courseId,
           courseData: {
@@ -116,22 +109,14 @@ export default function ContentList({
         })
       ).unwrap();
 
-      await dispatch(
-        fetchCoursesByCreator({
-          creatorId: creatorId,
-          authToken: authToken as string,
-        })
-      ).unwrap();
-
-      const updatedCourse = courses.find((c: any) => c._id === courseId);
-
-      if (!updatedCourse) {
-        toast.error("Error while fetching the course content");
-        return;
-      }
-
       //@ts-ignore
-      updateLocalContentItems(updatedCourse?.contentOrder);
+      const updatedOrder: any[] = response.contentOrder;
+
+      if (onUpdateContentList) {
+        onUpdateContentList(updatedOrder);
+      }
+      updateLocalContentItems(updatedOrder);
+
       toast.success("Content order updated successfully!");
     } catch (error) {
       console.error(error);
