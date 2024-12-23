@@ -14,8 +14,8 @@ import {
   Menu,
 } from "lucide-react";
 import { getQuiz, submitQuiz } from "../../../redux/slices/quizSlice";
-import { Button } from "antd";
 import { FaQuestionCircle } from "react-icons/fa";
+import QuizComponent from "../../../components/molecule/quizComponent/quizComponenet";
 
 interface Chapter {
   _id: string;
@@ -45,37 +45,26 @@ interface Quiz {
   questions: Question[];
 }
 
-interface QuizState {
-  submitted: boolean;
-  totalMarks: number | null;
-  selectedAnswers: Record<string, string | string[]>;
-  showExplanations: boolean;
-}
-
 export default function CoursePage() {
   const { courseId } = useParams<{ courseId: string }>();
   const dispatch = useDispatch<AppDispatch>();
   const authToken = sessionStorage.getItem("authToken") || "";
-  const { enrolledCourses } = useSelector((state: RootState) => state.enroll);
+  const {
+    enrolledCourses,
+    loading: enrollLoading,
+    error: enrollError,
+  } = useSelector((state: RootState) => state.enroll);
   const { chapter, loading: chapterLoading } = useSelector(
     (state: RootState) => state.mentor.chapterData
   );
   const {
-    quiz,
-    questions,
-    loading: quizLoading,
+    loading,
+    quiz: quizzes,
   } = useSelector((state: RootState) => state.quiz);
-  const [currentQuizIndex, setCurrentQuizIndex] = useState(0);
   const [currentCourse, setCurrentCourse] = useState<any>(null);
   const [orderedContent, setOrderedContent] = useState<(Chapter | Quiz)[]>([]);
   const [currentContentIndex, setCurrentContentIndex] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [quizState, setQuizState] = useState<QuizState>({
-    submitted: false,
-    totalMarks: null,
-    selectedAnswers: {},
-    showExplanations: false,
-  });
 
   useEffect(() => {
     if (!courseId || !authToken) return;
@@ -83,38 +72,37 @@ export default function CoursePage() {
   }, [courseId, authToken, dispatch]);
 
   useEffect(() => {
-    if (!enrolledCourses?.length || !courseId) return;
+    if (!enrollLoading && enrolledCourses) {
+      const course = enrolledCourses?.find((c) => c._id === courseId);
 
-    const course = enrolledCourses.find((c) => c._id === courseId);
-    if (!course) return;
+      setCurrentCourse(course);
 
-    setCurrentCourse(course);
+      const initialContent = [
+        //@ts-ignore
+        ...(course?.chapterIds?.map((id) => ({
+          _id: id,
+          title: "",
+          content: "",
+          type: "CHAPTER" as const,
+        })) || []),
+        //@ts-ignore
+        ...(course?.quizIds?.map((id) => ({
+          _id: id,
+          title: "",
+          description: "",
+          type: "QUIZ" as const,
+          questions: [],
+        })) || []),
+      ];
 
-    const initialContent = [
       //@ts-ignore
-      ...(course?.chapterIds?.map((id) => ({
-        _id: id,
-        title: "",
-        content: "",
-        type: "CHAPTER" as const,
-      })) || []),
-      //@ts-ignore
-      ...(course?.quizIds?.map((id) => ({
-        _id: id,
-        title: "",
-        description: "",
-        type: "QUIZ" as const,
-        questions: [],
-      })) || []),
-    ];
+      const ordered = course?.contentOrder
+        ?.map((id: string) => initialContent.find((item) => item._id === id))
+        .filter((item: Chapter | Quiz) => Boolean(item));
 
-    //@ts-ignore
-    const ordered = course?.contentOrder
-      .map((id: string) => initialContent.find((item) => item._id === id))
-      .filter((item: Chapter | Quiz) => Boolean(item));
-
-    setOrderedContent(ordered);
-  }, [enrolledCourses, courseId]);
+      setOrderedContent(ordered);
+    }
+  }, [enrolledCourses, courseId, enrollLoading]);
 
   useEffect(() => {
     const currentContent = orderedContent[currentContentIndex];
@@ -129,70 +117,25 @@ export default function CoursePage() {
     }
   }, [currentContentIndex, orderedContent, courseId, authToken, dispatch]);
 
-  const handleQuizSubmit = async () => {
-    if (!courseId || !quiz) return;
+  const handleQuizSubmission = async (answers: any) => {
+    const currentContent = orderedContent[currentContentIndex];
+    if (currentContent.type !== "QUIZ") {
+      console.error("Submission error: Current content is not a quiz.");
+      return;
+    }
 
-    const formattedAnswers = Object.keys(quizState.selectedAnswers).map(
-      (questionId) => {
-        const answer = quizState.selectedAnswers[questionId];
-        const questionType = questions.find(
-          (q) => q._id === questionId
-        )?.questionType;
-
-        return {
-          questionId,
-          answer:
-            questionType === "SINGLE_CHOICE"
-              ? answer
-              : Array.isArray(answer)
-                ? answer
-                : [answer],
-        };
-      }
-    );
-
-    try {
+    if (!loading) {
       const response = await dispatch(
         submitQuiz({
-          courseId: courseId,
-          //@ts-ignore
-          quizId: quiz[currentQuizIndex]._id,
-          answers: formattedAnswers,
+          courseId: courseId as string,
+          quizId: currentContent._id,
+          answers,
         })
       );
-
-      if (response.payload) {
-        const submissions = response?.payload?.submissions;
-        const marks = submissions?.reduce(
-          (acc: number, submission: { isCorrect: boolean }) => {
-            return acc + (submission.isCorrect ? 5 : 0);
-          },
-          0
-        );
-
-        setQuizState((prev) => ({
-          ...prev,
-          submitted: true,
-          totalMarks: marks,
-          showExplanations: true,
-        }));
-      }
-    } catch (error) {
-      console.error("Error submitting quiz:", error);
+      return response.payload;
     }
   };
-  const handleAnswerSelect = (
-    questionId: string,
-    answer: string | string[]
-  ) => {
-    setQuizState((prev) => ({
-      ...prev,
-      selectedAnswers: {
-        ...prev.selectedAnswers,
-        [questionId]: answer,
-      },
-    }));
-  };
+
   const handleNavigation = (direction: "next" | "prev") => {
     setCurrentContentIndex((prev) => {
       const newIndex =
@@ -200,89 +143,8 @@ export default function CoursePage() {
           ? Math.min(prev + 1, orderedContent.length - 1)
           : Math.max(prev - 1, 0);
 
-      const currentContent = orderedContent[prev];
-      const nextContent = orderedContent[newIndex];
-
-      if (currentContent?.type === "QUIZ" && nextContent?.type !== "QUIZ") {
-        setQuizState({
-          submitted: false,
-          totalMarks: null,
-          selectedAnswers: {},
-          showExplanations: false,
-        });
-      }
-
-      if (direction === "next" && nextContent?.type === "QUIZ") {
-        setCurrentQuizIndex((prevIndex) =>
-          Math.min(prevIndex + 1, (quiz || []).length - 1)
-        );
-      } else if (direction === "prev" && currentContent?.type === "QUIZ") {
-        setCurrentQuizIndex((prevIndex) => Math.max(prevIndex - 1, 0));
-      }
-
       return newIndex;
     });
-  };
-
-  const renderQuizQuestion = (question: Question) => {
-    const selectedAnswer = quizState.selectedAnswers[question?._id];
-    const isCorrect =
-      quizState.submitted &&
-      (Array.isArray(selectedAnswer)
-        ? selectedAnswer.includes(question?.solution.solution)
-        : selectedAnswer === question?.solution.solution);
-
-    if (!question) return null;
-    return (
-      <div
-        key={question._id}
-        className={`p-4 border rounded-lg space-y-4 ${
-          quizState.submitted
-            ? isCorrect
-              ? "bg-green-50 border-green-200"
-              : "bg-red-50 border-red-200"
-            : ""
-        }`}
-      >
-        <p className="font-medium">{question?.content}</p>
-
-        {question.questionType === "SINGLE_CHOICE" && (
-          <div className="space-y-2">
-            {question.solution.options.map((option, index) => (
-              <div key={index} className="flex items-center space-x-2">
-                <input
-                  type="radio"
-                  name={question._id}
-                  value={option}
-                  checked={quizState.selectedAnswers[question._id] === option}
-                  onChange={() => handleAnswerSelect(question._id, option)}
-                  disabled={quizState.submitted}
-                  className="w-4 h-4"
-                />
-                <label
-                  className={`${
-                    quizState.submitted && option === question.solution.solution
-                      ? "text-green-600 font-medium"
-                      : ""
-                  }`}
-                >
-                  {option}
-                </label>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {quizState.submitted && quizState.showExplanations && (
-          <div className="mt-2 p-3 bg-gray-50 rounded border">
-            <p className="font-medium text-sm">
-              {isCorrect ? "✓ Correct" : "✗ Incorrect"}
-            </p>
-            <p className="text-sm mt-1 text-gray-600">{question.explanation}</p>
-          </div>
-        )}
-      </div>
-    );
   };
 
   const renderContent = () => {
@@ -299,62 +161,28 @@ export default function CoursePage() {
         </div>
       ) : (
         <div
-          className="prose prose-stone dark:prose-invert max-w-none"
+          className="prose prose-stone dark:prose-invert max-w-none mt-7"
           dangerouslySetInnerHTML={{ __html: chapter?.content || "" }}
         />
       );
     }
 
-    return quizLoading ? (
-      <div className="flex items-center justify-center h-full">
-        <Loader2Icon className="animate-spin w-8 h-8" />
-      </div>
-    ) : (
-      <div className="space-y-6">
-        <div className="border-b pb-4">
-          <h2 className="text-2xl font-bold">
-            {quiz[currentQuizIndex]?.title}
-          </h2>
-          <p className="text-gray-600 mt-2">
-            {quiz[currentQuizIndex]?.description}
-          </p>
-        </div>
+    if (currentContent.type === "QUIZ") {
+      const quizData = quizzes.find((quiz) => quiz._id === currentContent._id);
+      if (!quizData) {
+        return <div>Loading quiz...</div>;
+      }
 
-        <div className="space-y-6">
-          {renderQuizQuestion(questions[currentQuizIndex] as any)}
-        </div>
-
-        <div className="flex justify-between items-center mt-6 pt-4 border-t">
-          {!quizState.submitted ? (
-            <Button
-              onClick={handleQuizSubmit}
-              disabled={Object.keys(quizState.selectedAnswers).length === 0}
-              className="bg-blue-600 text-white hover:bg-blue-700"
-            >
-              Submit Quiz
-            </Button>
-          ) : (
-            <div className="flex items-center gap-4">
-              <div className="p-4 bg-green-100 dark:bg-green-600 rounded">
-                <p className="font-bold">
-                  Your Score: {quizState.totalMarks} / {questions.length * 5}
-                </p>
-              </div>
-              <Button
-                onClick={() =>
-                  setQuizState((prev) => ({
-                    ...prev,
-                    showExplanations: !prev.showExplanations,
-                  }))
-                }
-              >
-                {quizState.showExplanations ? "Hide" : "Show"} Explanations
-              </Button>
-            </div>
-          )}
-        </div>
-      </div>
-    );
+      return (
+        <QuizComponent
+          questions={quizData.questions as Question[]}
+          onSubmit={handleQuizSubmission}
+          onQuizComplete={() => {
+            console.log("Quiz complete");
+          }}
+        />
+      );
+    }
   };
 
   return (
@@ -380,7 +208,7 @@ export default function CoursePage() {
           </div>
 
           <div className="flex-1 overflow-y-auto py-4">
-            {orderedContent.map((item, index) => (
+            {orderedContent?.map((item, index) => (
               <button
                 key={item._id}
                 className={`w-full text-left px-6 py-3 flex items-center gap-4 transition-all duration-200 ${
@@ -388,15 +216,7 @@ export default function CoursePage() {
                     ? "bg-white bg-opacity-20 border-l-4 border-yellow-400"
                     : "hover:bg-white hover:bg-opacity-10"
                 }`}
-                onClick={() => {
-                  item.type === "QUIZ" &&
-                    index > currentQuizIndex &&
-                    setCurrentQuizIndex((prev) => prev + 1);
-                  item.type === "QUIZ" &&
-                    index < currentQuizIndex &&
-                    setCurrentQuizIndex((prev) => prev - 1);
-                  setCurrentContentIndex(index);
-                }}
+                onClick={() => setCurrentContentIndex(index)}
               >
                 {item.type === "CHAPTER" ? (
                   <BookOpen className="w-5 h-5 flex-shrink-0" />
@@ -473,7 +293,15 @@ export default function CoursePage() {
             result in a complaint with the Cyber Security Cell. These show up in
             Background Checks.
           </span>
-          {renderContent()}
+          {enrollError ? (
+            <div>
+              <span className="text-red-500 font-semibold text-lg text-center mt-10">
+                {enrollError}
+              </span>
+            </div>
+          ) : (
+            renderContent()
+          )}
         </main>
       </div>
     </div>

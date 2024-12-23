@@ -4,7 +4,7 @@ import axios from "axios";
 const enrollApiUrl = import.meta.env.VITE_MENTOR_API_URL;
 
 interface Course {
-  _id : string;
+  _id: string;
   title: string;
   description: string;
   creator: string;
@@ -27,21 +27,29 @@ const initialState: EnrollState = {
 
 // Enroll in a course
 export const enrollCourse = createAsyncThunk<
-  Course,
+  { enrolledCourse: Course; updatedCourses: Course[] },
   { courseId: string; authToken: string },
   { rejectValue: string }
 >(
   "enroll/enrollCourse",
   async ({ courseId, authToken }, { rejectWithValue }) => {
     try {
-      const response = await axios.put(
+      const enrollResponse = await axios.put(
         `${enrollApiUrl}/enroll/${courseId}`,
         {},
         {
           headers: { Authorization: `Bearer ${authToken}` },
         }
       );
-      return response.data;
+
+      const coursesResponse = await axios.get(`${enrollApiUrl}/enroll`, {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
+
+      return {
+        enrolledCourse: enrollResponse.data,
+        updatedCourses: coursesResponse.data || []
+      };
     } catch (error: any) {
       console.log(error);
       return rejectWithValue(
@@ -53,7 +61,7 @@ export const enrollCourse = createAsyncThunk<
 
 // Unenroll from a course
 export const unenrollCourse = createAsyncThunk<
-  string,
+  { courseId: string; updatedCourses: Course[] },
   { courseId: string; authToken: string },
   { rejectValue: string }
 >(
@@ -63,7 +71,15 @@ export const unenrollCourse = createAsyncThunk<
       await axios.delete(`${enrollApiUrl}/enroll/${courseId}`, {
         headers: { Authorization: `Bearer ${authToken}` },
       });
-      return courseId;
+
+      const coursesResponse = await axios.get(`${enrollApiUrl}/enroll`, {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
+
+      return {
+        courseId,
+        updatedCourses: coursesResponse.data || []
+      };
     } catch (error: any) {
       return rejectWithValue(
         error.response?.data?.message || "Failed to unenroll from the course"
@@ -72,7 +88,6 @@ export const unenrollCourse = createAsyncThunk<
   }
 );
 
-// Fetch enrolled courses
 export const fetchEnrolledCourses = createAsyncThunk<
   Course[],
   string,
@@ -95,7 +110,6 @@ const enrollSlice = createSlice({
   initialState,
   reducers: {},
   extraReducers: (builder) => {
-    // Enroll course
     builder
       .addCase(enrollCourse.pending, (state) => {
         state.loading = true;
@@ -103,9 +117,9 @@ const enrollSlice = createSlice({
       })
       .addCase(
         enrollCourse.fulfilled,
-        (state, action: PayloadAction<Course>) => {
+        (state, action: PayloadAction<{ enrolledCourse: Course; updatedCourses: Course[] }>) => {
           state.loading = false;
-          state.enrolledCourses.push(action.payload);
+          state.enrolledCourses = action.payload.updatedCourses;
         }
       )
       .addCase(
@@ -116,7 +130,6 @@ const enrollSlice = createSlice({
         }
       );
 
-    // Unenroll course
     builder
       .addCase(unenrollCourse.pending, (state) => {
         state.loading = true;
@@ -124,11 +137,9 @@ const enrollSlice = createSlice({
       })
       .addCase(
         unenrollCourse.fulfilled,
-        (state, action: PayloadAction<string>) => {
+        (state, action: PayloadAction<{ courseId: string; updatedCourses: Course[] }>) => {
           state.loading = false;
-          state.enrolledCourses = state.enrolledCourses.filter(
-            (course) => course.title !== action.payload
-          );
+          state.enrolledCourses = action.payload.updatedCourses;
         }
       )
       .addCase(
@@ -139,7 +150,6 @@ const enrollSlice = createSlice({
         }
       );
 
-    // Fetch enrolled courses
     builder
       .addCase(fetchEnrolledCourses.pending, (state) => {
         state.loading = true;

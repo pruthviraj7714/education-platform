@@ -19,6 +19,7 @@ import {
 } from "../../../redux/slices/enrollSlice";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
+import { Loader2 } from "lucide-react";
 
 function Index() {
   const methods = useForm();
@@ -47,6 +48,7 @@ function Index() {
   const [debounceTimeout, setDebounceTimeout] = useState<NodeJS.Timeout | null>(
     null
   );
+  const [enrollmentLoading, setEnrollmentLoading] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isEnrollModalOpen, setIsEnrollModalOpen] = useState(false);
   const [openCategories, setOpenCategories] = useState<{
@@ -109,6 +111,7 @@ function Index() {
   };
 
   const enrollIntoCourse = async (courseId: string) => {
+    setEnrollmentLoading(true);
     const response = await dispatch(
       enrollCourse({
         authToken: authToken!,
@@ -121,6 +124,7 @@ function Index() {
     } else {
       toast.error("Failed to enroll into the course");
     }
+    setEnrollmentLoading(false);
   };
 
   return (
@@ -227,8 +231,8 @@ function Index() {
                       description={course?.description}
                       courseId={course?._id}
                       onClick={() => {
-                        const isEnrolled = enrolledCourses.some((course) => {
-                          return course._id === course?._id;
+                        const isEnrolled = enrolledCourses.some((c) => {
+                          return c._id === course?._id;
                         });
 
                         if (isEnrolled) {
@@ -255,6 +259,14 @@ function Index() {
                     You're about to enroll in this course. Are you sure you want
                     to proceed?
                   </p>
+                  {enrollmentLoading && (
+                    <div className="flex flex-col justify-center items-center">
+                      <p className="text-lg text-gray-700 mb-2">
+                        Hang tight! We're enrolling you in the course...
+                      </p>
+                      <Loader2 className="animate-spin h-7 w-7 text-orange-400" />
+                    </div>
+                  )}
                 </Modal>
               )}
             </div>

@@ -8,6 +8,7 @@ import { useDispatch } from "react-redux";
 import {
   updateChapter,
   deleteChapter,
+  createChapter,
 } from "../../../redux/slices/mentorSlice";
 import { AppDispatch } from "../../../redux/store";
 import { Switch } from "antd";
@@ -38,8 +39,6 @@ const ChapterList: React.FC<ChapterListProps> = ({ chapters, setChapters }) => {
   const navigate = useNavigate();
   const { courseId } = useParams<{ courseId: string }>();
   const dispatch = useDispatch<AppDispatch>();
-  console.log(chapters);
-
 
   const addChapter = () => {
     setIsAddingChapter(true);
@@ -65,17 +64,13 @@ const ChapterList: React.FC<ChapterListProps> = ({ chapters, setChapters }) => {
 
     try {
       if (isAddingChapter && courseId) {
-        const addedChapter = await dispatch(
-          updateChapter({
+        await dispatch(
+          createChapter({
             chapterData: newChapter,
             courseId,
-            chapterId: newChapter?._id as string,
             headers: { Authorization: `Bearer ${authToken}` },
           })
         ).unwrap();
-
-        //@ts-ignore
-        setChapters((prev) => [...prev, addedChapter]);
       } else if (editingChapterIndex !== null && courseId) {
         const chapterToUpdate = chapters[editingChapterIndex];
 
@@ -128,46 +123,45 @@ const ChapterList: React.FC<ChapterListProps> = ({ chapters, setChapters }) => {
 
   const handleTogglePublishStatus = async (chapterIndex: number) => {
     const authToken = sessionStorage.getItem("authToken");
-  
+
     if (!authToken) {
       console.error("Authentication token missing!");
       return;
     }
-  
+
     const updatedChapters = [...chapters];
     const chapterToUpdate = { ...updatedChapters[chapterIndex] };
     chapterToUpdate.isPublished = !chapterToUpdate.isPublished;
-  
     try {
       const updatedChapter = await dispatch(
         updateChapter({
-          chapterId: chapterToUpdate._id || "",
+          chapterId: chapterToUpdate._id as string,
           chapterData: chapterToUpdate,
           courseId: courseId as string,
           headers: { Authorization: `Bearer ${authToken}` },
         })
       ).unwrap();
-      
-        //@ts-ignore
+
+      //@ts-ignore
       updatedChapters[chapterIndex] = updatedChapter;
       setChapters(updatedChapters);
     } catch (error) {
       console.error("Failed to update publish status:", error);
     }
   };
-  
+
   const handleTogglePriceStatus = async (chapterIndex: number) => {
     const authToken = sessionStorage.getItem("authToken");
-  
+
     if (!authToken) {
       console.error("Authentication token missing!");
       return;
     }
-  
+
     const updatedChapters = [...chapters];
     const chapterToUpdate = { ...updatedChapters[chapterIndex] };
     chapterToUpdate.isFree = !chapterToUpdate.isFree;
-  
+
     try {
       const updatedChapter = await dispatch(
         updateChapter({
@@ -177,15 +171,14 @@ const ChapterList: React.FC<ChapterListProps> = ({ chapters, setChapters }) => {
           headers: { Authorization: `Bearer ${authToken}` },
         })
       ).unwrap();
-      
-        //@ts-ignore
+
+      //@ts-ignore
       updatedChapters[chapterIndex] = updatedChapter;
       setChapters(updatedChapters);
     } catch (error) {
       console.error("Failed to update price status:", error);
     }
   };
-  
 
   const handleViewChapter = (courseId: string, chapterId: string) => {
     navigate(`/chapters/${courseId}/${chapterId}`);
@@ -201,7 +194,7 @@ const ChapterList: React.FC<ChapterListProps> = ({ chapters, setChapters }) => {
                 ? { title: "", content: "" }
                 : chapters[editingChapterIndex!]
             }
-        //@ts-ignore
+            //@ts-ignore
             onSave={handleSaveChapter}
             totalChapters={chapters.length}
           />
