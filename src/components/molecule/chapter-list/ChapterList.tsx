@@ -98,6 +98,7 @@ const ChapterList: React.FC<ChapterListProps> = ({ chapters, setChapters }) => {
 
       setIsAddingChapter(false);
       setEditingChapterIndex(null);
+      navigate(`/course-details/${courseId}?activeTab=${2}`);
     } catch (error) {
       console.error("Failed to save chapter:", error);
     }
@@ -115,6 +116,7 @@ const ChapterList: React.FC<ChapterListProps> = ({ chapters, setChapters }) => {
           })
         ).unwrap();
         setChapters(chapters.filter((chapter) => chapter._id !== chapterId));
+      navigate(`/course-details/${courseId}?activeTab=${2}`);
       } catch (error) {
         console.error("Failed to delete chapter:", error);
       }
