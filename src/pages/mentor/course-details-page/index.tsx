@@ -43,11 +43,11 @@ const CourseDetailsPage = () => {
     loading,
     error,
   } = useSelector((state: RootState) => state.mentor);
-  const { user } = useSelector((state: RootState) => state.auth);
+  const { user, loading : userStateLoading } = useSelector((state: RootState) => state.auth);
 
   const isCreator = useMemo(() => {
     return user?.roles?.includes("creator");
-  }, []);
+  }, [userStateLoading]);
 
   const [currentCourse, setCurrentCourse] = useState<any>(null);
   const [chapters, setChapters] = useState<Chapter[]>([]);
@@ -61,22 +61,21 @@ const CourseDetailsPage = () => {
   } = useQuiz(courseId as string);
 
   const updateContentList = (newContentOrder: string[]) => {
-    setCurrentCourse((prevCourse : any) => ({
+    setCurrentCourse((prevCourse: any) => ({
       ...prevCourse,
-      contentOrder: newContentOrder
+      contentOrder: newContentOrder,
     }));
   };
 
   useEffect(() => {
-    if (user?.roles?.includes("creator")) {
+    if (!userStateLoading && user?.roles?.includes("creator")) {
       dispatch(
         fetchCourseById({
           courseId: courseId as string,
         })
       ).then((res) => setCurrentCourse(res.payload));
     }
-  }, [user, dispatch, authToken]);
-
+  }, [user, userStateLoading, dispatch, authToken]);
 
   useEffect(() => {
     if (authToken && courseId) {
@@ -101,7 +100,7 @@ const CourseDetailsPage = () => {
     }
   }, [initialChapters]);
 
-  if (loading) {
+  if (loading || userStateLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <BiLoader className="animate-spin text-4xl text-primary" />
@@ -134,11 +133,9 @@ const CourseDetailsPage = () => {
           defaultActiveKey={activeTabKey ? activeTabKey : "1"}
           style={{ width: "100%" }}
         >
-          {isCreator && (
-            <TabPane tab="Details" key="1">
-              <DetailsTab course={currentCourse} authToken={authToken || ""} />
-            </TabPane>
-          )}
+          <TabPane tab="Details" key="1">
+            <DetailsTab course={currentCourse} authToken={authToken || ""} />
+          </TabPane>
           <TabPane tab="Chapters" key="2">
             <ChapterList chapters={chapters} setChapters={setChapters} />
           </TabPane>
@@ -154,22 +151,20 @@ const CourseDetailsPage = () => {
               />
             )}
           </TabPane>
-          {isCreator && (
-            <TabPane tab="Order" key="4">
-              {courseId && (
-                <ContentList
-                  chapters={chapters}
-                  courseId={courseId}
-                  quizes={quiz}
-                  prevOrder={
-                    //@ts-ignore
-                    currentCourse?.contentOrder ?? []
-                  }
-                  onUpdateContentList={updateContentList}
-                />
-              )}
-            </TabPane>
-          )}
+          <TabPane tab="Order" key="4">
+            {courseId && (
+              <ContentList
+                chapters={chapters}
+                courseId={courseId}
+                quizes={quiz}
+                prevOrder={
+                  //@ts-ignore
+                  currentCourse?.contentOrder ?? []
+                }
+                onUpdateContentList={updateContentList}
+              />
+            )}
+          </TabPane>
         </Tabs>
       </div>
     </div>

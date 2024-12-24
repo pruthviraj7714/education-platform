@@ -161,8 +161,8 @@ export default function CoursePage() {
         </div>
       ) : (
         <div
-          className="prose prose-stone dark:prose-invert max-w-none mt-7"
-          dangerouslySetInnerHTML={{ __html: chapter?.content || "" }}
+          className="prose max-w-none mt-7"
+          dangerouslySetInnerHTML={{ __html: chapter?.content }}
         />
       );
     }

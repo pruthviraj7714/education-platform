@@ -6,6 +6,7 @@ import Button from "../../../components/atoms/button";
 import { updateCourse } from "../../../redux/slices/mentorSlice";
 import { RxDragHandleDots2 } from "react-icons/rx";
 import { AppDispatch } from "src/redux/store";
+import { useNavigate } from "react-router-dom";
 
 interface ContentOrderProps {
   courseId: string;
@@ -28,7 +29,7 @@ export default function ContentList({
   const [draggedItem, setDraggedItem] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const authToken = sessionStorage.getItem("authToken");
-
+  const navigate = useNavigate();
   const updateLocalContentItems = (items: any[]) => {
     const allItems = [
       ...(chapters.map((c) => ({ ...c, type: "chapter" })) ?? []),
@@ -118,6 +119,7 @@ export default function ContentList({
       updateLocalContentItems(updatedOrder);
 
       toast.success("Content order updated successfully!");
+      navigate(`/course-details/${courseId}?activeTab=${4}`);
     } catch (error) {
       console.error(error);
       toast.error("Failed to update content order");
